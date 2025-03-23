@@ -8,28 +8,34 @@ type EnhancedSuspenseProps<T> = {
   onError?: (error: Error) => ReactNode;
 };
 
+const Use = <T,>({
+  promise,
+  onSuccess,
+}: {
+  promise?: Promise<T> | JSX.Element | string;
+  onSuccess?: ((data: T) => ReactNode) | undefined;
+}) => {
+  if (!promise) return null;
+  if (
+    typeof promise === "string" ||
+    ("props" in promise && "type" in promise)
+  ) {
+    return promise;
+  }
+  const data = use(promise);
+  return onSuccess ? onSuccess(data) : (data as ReactNode);
+};
+
 const EnhancedSuspense = <T,>({
   fallback = "Loading...",
   children: promise,
   onSuccess,
   onError,
 }: EnhancedSuspenseProps<T>) => {
-  const Use = () => {
-    if (!promise) return null;
-    if (
-      typeof promise === "string" ||
-      ("props" in promise && "type" in promise)
-    ) {
-      return promise;
-    }
-    const data = use(promise);
-    return onSuccess ? onSuccess(data) : (data as ReactNode);
-  };
-
   return (
     <ErrorBoundary onError={onError}>
       <Suspense fallback={fallback}>
-        <Use />
+        <Use promise={promise} onSuccess={onSuccess} />
       </Suspense>
     </ErrorBoundary>
   );
