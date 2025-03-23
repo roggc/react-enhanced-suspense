@@ -5,7 +5,7 @@ type EnhancedSuspenseProps<T> = {
   fallback?: ReactNode;
   children?: Promise<T> | JSX.Element | undefined | string;
   onSuccess?: ((data: T) => ReactNode) | undefined;
-  onError?: ((error: Error) => ReactNode) | undefined;
+  onError?: (error: Error) => ReactNode;
 };
 
 const EnhancedSuspense = <T,>({

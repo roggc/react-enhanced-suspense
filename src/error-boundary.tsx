@@ -1,33 +1,22 @@
-import React, { Component, ReactNode } from "react";
+"use client";
 
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: Error | undefined;
-}
+import { Component, ReactNode } from "react";
 
-interface ErrorBoundaryProps {
-  children: ReactNode;
+type ErrorBoundaryProps = {
   onError?: ((error: Error) => ReactNode) | undefined;
-}
+  children: ReactNode;
+};
+
+type ErrorBoundaryState = {
+  hasError: boolean;
+  error: Error | null;
+};
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: undefined,
-    };
-  }
+  state: ErrorBoundaryState = { hasError: false, error: null };
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return {
-      hasError: true,
-      error,
-    };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Error caught by ErrorBoundary:", error, errorInfo);
+    return { hasError: true, error };
   }
 
   render() {

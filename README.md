@@ -182,9 +182,34 @@ When omitting `onSuccess`, the resolved value of `children` must be a valid `Rea
 </EnhancedSuspense>
 ```
 
+## Usage Notes
+
+`EnhancedSuspense` can be used in both Server Components and Client Components. Its behavior depends on the promise passed as `children`:
+
+```typescript
+// In a Server Component with an immediately resolved promise
+import { EnhancedSuspense } from "react-enhanced-suspense";
+
+export default function ServerPage() {
+  const promise = Promise.resolve("Hello from server");
+
+  return (
+    <EnhancedSuspense onSuccess={(data) => <div>{data}</div>}>
+      {promise}
+    </EnhancedSuspense>
+  );
+}
+```
+
+- **Immediately resolved promises**: If the promise is already resolved (e.g., `Promise.resolve`), `EnhancedSuspense` renders the result (`onSuccess`) directly on the server, bypassing the `fallback`.
+
+- **Pending promises**: For unresolved promises (e.g., async operations), `EnhancedSuspense` renders the `fallback` on the server and delegates promise resolution to the client via React's `use` hook.
+
+When used in a Server Component, `EnhancedSuspense` itself acts as a Server Component, while its internal `ErrorBoundary` (a Client Component) handles errors on the client.
+
 ## Integration with Waku and Server Actions
 
-`EnhancedSuspense` works seamlessly with Waku, a React 19 framework, and Server Actions.
+`EnhancedSuspense` works seamlessly with [Waku](https://waku.gg), a React 19 framework, and Server Actions.
 
 ### Approach 1: Server Action Returns a Component
 
