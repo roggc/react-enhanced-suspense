@@ -341,7 +341,7 @@ export default function HomePageClient() {
 }
 ```
 
-**Note**: This approach works but may log errors in the console occasionally, making it less stable than the first approach.
+**Note**: This approach works but may log errors in the console occasionally, making it less stable than the first approach. This instability arises because the promise is created directly in the Client Component and recreated on every render, as noted in the React documentation: "Prefer creating Promises in Server Components and passing them to Client Components over creating Promises in Client Components. Promises created in Client Components are recreated on every render. Promises passed from a Server Component to a Client Component are stable across re-renders." For better stability, prefer Approach 1, where the promise is created on the server and passed to the client.
 
 ## Requirements
 
