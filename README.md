@@ -147,7 +147,7 @@ export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
   <EnhancedSuspense onSuccess={(data) => data}>{promise}</EnhancedSuspense>
   ```
 
-- Without promise (renders `null`):
+- Without `children` (renders `null`):
 
   ```typescript
   <EnhancedSuspense />
