@@ -1,0 +1,34 @@
+{
+  "name": "react-enhanced-suspense",
+  "version": "1.0.0",
+  "description": "A React 19 component that enhances Suspense with promise handling",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "keywords": [
+    "react",
+    "suspense",
+    "react-19",
+    "promise",
+    "error-boundary",
+    "server-actions"
+  ],
+  "author": "roger gomez castells (roggc)",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.12",
+    "tsc": "^2.0.4",
+    "typescript": "^5.8.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/roggc/react-enhanced-suspense.git"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "esnext", // Compila a la última versión de ECMAScript
+    "module": "NodeNext", // Usa módulos ES con extensiones para Node.js
+    "jsx": "react-jsx", // Soporte para JSX en React 19
+    "declaration": true, // Genera archivos .d.ts para tipos
+    "outDir": "./dist", // Directorio de salida
+    "rootDir": "./src", // Directorio raíz de los fuentes
+    "strict": true, // Chequeos estrictos
+    "esModuleInterop": true, // Compatibilidad con módulos CommonJS
+    "skipLibCheck": true, // Omite chequeo de tipos en librerías
+    "moduleResolution": "NodeNext", // Consistente con module: "NodeNext"
+    "allowSyntheticDefaultImports": true, // Permite importaciones por defecto sintéticas
+    "noEmitOnError": true, // No emite si hay errores
+    "noEmit": false // Genera archivos .js
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
