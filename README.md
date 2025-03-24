@@ -29,19 +29,19 @@ If you have this component using React's `Suspense`:
 
 import { Suspense, use } from "react";
 
-export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
-  const Comp = () => {
-    if (!promise) return null;
-    const data = use(promise);
-    return data.map((item) => <div key={item}>{item}</div>);
-  };
+const Use = ({ promise }: { promise?: Promise<string[]> | undefined }) => {
+  if (!promise) return null;
+  const data = use(promise);
+  return data.map((item) => <div key={item}>{item}</div>);
+};
 
+export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
   return (
     <>
       <div>hey</div>
       <div>
         <Suspense fallback="Loading...">
-          <Comp />
+          <Use promise={promise} />
         </Suspense>
       </div>
     </>
@@ -57,19 +57,19 @@ You can rewrite it using `EnhancedSuspense`:
 import { use } from "react";
 import { EnhancedSuspense } from "react-enhanced-suspense";
 
-export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
-  const Comp = () => {
-    if (!promise) return null;
-    const data = use(promise);
-    return data.map((item) => <div key={item}>{item}</div>);
-  };
+const Use = ({ promise }: { promise?: Promise<string[]> | undefined }) => {
+  if (!promise) return null;
+  const data = use(promise);
+  return data.map((item) => <div key={item}>{item}</div>);
+};
 
+export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
   return (
     <>
       <div>hey</div>
       <div>
         <EnhancedSuspense fallback="Loading...">
-          <Comp />
+          <Use promise={promise} />
         </EnhancedSuspense>
       </div>
     </>
