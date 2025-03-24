@@ -1,1 +1,4 @@
-export { default as EnhancedSuspense } from "./enhanced-suspense.js";
+import EnhancedSuspense from "./enhanced-suspense.js";
+
+export { EnhancedSuspense };
+export default EnhancedSuspense;

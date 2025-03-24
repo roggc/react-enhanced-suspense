@@ -12,11 +12,21 @@ npm i react-enhanced-suspense
 
 ## Usage
 
-Import `EnhancedSuspense` in your code:
+Starting with v1.1.0, you can import the component in two ways:
 
-```typescript
-import { EnhancedSuspense } from "react-enhanced-suspense";
-```
+- **Named import**: Use this for continuity with v1.0.x or if you prefer explicit names:
+
+  ```typescript
+  import { EnhancedSuspense } from "react-enhanced-suspense";
+  ```
+
+- **Default import**: Use this for a shorter, more familiar syntax (like React’s `Suspense`):
+
+  ```typescript
+  import Suspense from "react-enhanced-suspense";
+  ```
+
+Both are the same component under the hood. Pick the one that suits your project!
 
 This component can be used as a substitute for React's `Suspense`.
 
@@ -207,14 +217,33 @@ export default function ServerPage() {
 
 When used in a Server Component, `EnhancedSuspense` itself acts as a Server Component, while its internal `ErrorBoundary` (a Client Component) handles errors on the client.
 
-## Integration with Waku and Server Actions
+## Integration with Waku and React 19 Server Functions
 
-`EnhancedSuspense` works seamlessly with [Waku](https://waku.gg), a React 19 framework, and Server Actions.
+`EnhancedSuspense` works seamlessly with [Waku](https://waku.gg), a React 19 framework, and React 19 Server Functions.
 
-### Approach 1: Server Action Returns a Component
+### Approach 1: React 19 Server Function Returns a Component
 
 ```typescript
-// src/server-actions/say-hello.tsx
+// src/components/home-page-client.tsx
+"use client";
+
+import { sayHello } from "../server-functions/say-hello";
+import { useState, useEffect } from "react";
+import { EnhancedSuspense } from "react-enhanced-suspense";
+
+export default function HomePageClient() {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  return isClient ? <EnhancedSuspense>{sayHello()}</EnhancedSuspense> : null;
+}
+```
+
+```typescript
+// src/server-functions/say-hello.tsx
 "use server";
 
 import SayHello from "../components/say-hello";
@@ -235,26 +264,9 @@ export function sayHello() {
 ```
 
 ```typescript
-// src/components/home-page-client.tsx
+// src/components/say-hello.tsx
 "use client";
 
-import { sayHello } from "../server-actions/say-hello";
-import { useState, useEffect } from "react";
-import { EnhancedSuspense } from "react-enhanced-suspense";
-
-export default function HomePageClient() {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  return isClient ? <EnhancedSuspense>{sayHello()}</EnhancedSuspense> : null;
-}
-```
-
-```typescript
-// src/components/say-hello.tsx
 import { EnhancedSuspense } from "react-enhanced-suspense";
 
 export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
@@ -275,7 +287,9 @@ export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
 
 #### Waku Build/Deploy Workaround for Client Components
 
-If `SayHello` is a Client Component, Waku requires you to use it in the JSX tree to avoid build/deploy errors:
+If you are using Waku `0.21.23`, you'll need a workaround to build/deploy successfully (see below). This issue is fixed in Waku `0.21.24` and later, so the workaround won’t be needed anymore.
+
+If `SayHello` is a Client Component, `waku` (in its version `0.21.23`) requires you to use it in the JSX tree to avoid build/deploy errors:
 
 ```typescript
 // src/pages/_layout.tsx
@@ -303,10 +317,10 @@ export default async function RootLayout({ children }: RootLayoutProps) {
 
 This is not needed if `SayHello` is a Server Component and doesn’t call or use any Client Component down the tree.
 
-### Approach 2: Server Action Returns a Promise
+### Approach 2: React 19 Server Function Returns a Promise
 
 ```typescript
-// src/server-actions/say-hello.tsx
+// src/server-functions/say-hello.tsx
 "use server";
 
 export function sayHello() {
@@ -326,7 +340,7 @@ export function sayHello() {
 // src/components/home-page-client.tsx
 "use client";
 
-import { sayHello } from "../server-actions/say-hello";
+import { sayHello } from "../server-functions/say-hello";
 import { useState, useEffect } from "react";
 import SayHello from "./say-hello";
 
