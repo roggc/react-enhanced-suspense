@@ -1,6 +1,6 @@
 {
   "name": "react-enhanced-suspense",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A React 19 component that enhances Suspense with promise handling",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
