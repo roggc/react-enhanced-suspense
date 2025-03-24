@@ -14,8 +14,7 @@
     "suspense",
     "react-19",
     "promise",
-    "error-boundary",
-    "server-actions"
+    "error-boundary"
   ],
   "author": "roger gomez castells (roggc)",
   "license": "MIT",
