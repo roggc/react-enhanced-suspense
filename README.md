@@ -1,6 +1,6 @@
 # react-enhanced-suspense
 
-A React 19 component that enhances `Suspense` with promise handling.
+A React 19 component that extends `Suspense` with optional promise resolution (`onSuccess`) and error handling (`onError`).
 
 ## Installation
 
@@ -39,13 +39,12 @@ If you have this component using React's `Suspense`:
 
 import { Suspense, use } from "react";
 
-const Use = ({ promise }: { promise?: Promise<string[]> | undefined }) => {
-  if (!promise) return null;
+const Use = ({ promise }: { promise: Promise<string[]> | undefined }) => {
   const data = use(promise);
   return data.map((item) => <div key={item}>{item}</div>);
 };
 
-export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
+export default function SayHello({ promise }: { promise: Promise<string[]> }) {
   return (
     <>
       <div>hey</div>
@@ -67,13 +66,12 @@ You can rewrite it using `EnhancedSuspense`:
 import { use } from "react";
 import { EnhancedSuspense } from "react-enhanced-suspense";
 
-const Use = ({ promise }: { promise?: Promise<string[]> | undefined }) => {
-  if (!promise) return null;
+const Use = ({ promise }: { promise: Promise<string[]> | undefined }) => {
   const data = use(promise);
   return data.map((item) => <div key={item}>{item}</div>);
 };
 
-export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
+export default function SayHello({ promise }: { promise: Promise<string[]> }) {
   return (
     <>
       <div>hey</div>
@@ -87,14 +85,56 @@ export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
 }
 ```
 
-This will work, but internally `EnhancedSuspense` uses React's `use`, so you don’t need to call it manually when using this component. You can write instead directly:
+and will be exactly the same, because `EnhancedSuspense` behaves exactly as React's `Suspense` when no `onSuccess` prop or `onError` prop is passed. The grace of `EnhancedSuspense` is that we can pass an optional `onSuccess` prop when the `children` is a promise and we want to manipulate the resolved value of the promise, like in this case. So, in this case, with `EnhancedSuspense`, we can write directly:
 
 ```typescript
 "use client";
 
 import { EnhancedSuspense } from "react-enhanced-suspense";
 
-export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
+export default function SayHello({ promise }: { promise: Promise<string[]> }) {
+  return (
+    <>
+      <div>hey</div>
+      <div>
+        <EnhancedSuspense
+          fallback="Loading..."
+          onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)} // <--- this is key, makes the component use React's "use" function under the hood
+        >
+          {promise}
+        </EnhancedSuspense>
+      </div>
+    </>
+  );
+}
+```
+
+If we want to add an Error Boundary to the code, we can do it passing the optional prop `onError`. This will wrap the React's `Suspense` in an `ErrorBoundary` component:
+
+```typescript
+"use client";
+
+import { EnhancedSuspense } from "react-enhanced-suspense";
+
+export default function Component() {
+  return (
+    <EnhancedSuspense
+      onError={(error) => <div>{error}</div>} // <--- this is key, wrapps React's Suspense in an ErrorBoundary component
+    >
+      {Promise.reject("Failed")}
+    </EnhancedSuspense>
+  );
+}
+```
+
+If we want the two options, that is, an `ErrorBoundary` plus the manipulation of the value returned by the promise, we pass the two optional props:
+
+```typescript
+"use client";
+
+import { EnhancedSuspense } from "react-enhanced-suspense";
+
+export default function SayHello({ promise }: { promise: Promise<string[]> }) {
   return (
     <>
       <div>hey</div>
@@ -102,6 +142,7 @@ export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
         <EnhancedSuspense
           fallback="Loading..."
           onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
+          onError={(error) => <div>{`Error: ${error.message}`}</div>}
         >
           {promise}
         </EnhancedSuspense>
@@ -111,251 +152,34 @@ export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
 }
 ```
 
-## Props
-
-- `fallback`: A `ReactNode` to show while the promise is pending. Defaults to `"Loading..."`.
-
-- `children`: Can be a `Promise<T>`, `JSX.Element`, `string`, or `undefined`.
-
-- `onSuccess`: Can be a function that takes the resolved promise value and returns a `ReactNode`, or `undefined`.
-
-- `onError`: Can be a function that takes an `Error` and returns a `ReactNode` for custom error rendering, or `undefined`.
-
-## Example with onError
+Finally, show this example where the resource passed as children to `EnhancedSuspense` is not a promise but a `Context`:
 
 ```typescript
-<EnhancedSuspense
-  fallback="Loading..."
-  onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
-  onError={(error) => <span>Error: {error.message}</span>}
->
-  {promise}
-</EnhancedSuspense>
-```
+"use client";
 
-## Omitting Props
-
-- Without `fallback` (uses default) and without `onError` (uses default JSX returned by integrated Error Boundary, referencing `error.message`):
-
-  ```typescript
-  <EnhancedSuspense
-    onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
-  >
-    {promise}
-  </EnhancedSuspense>
-  ```
-
-- Without `onSuccess` (renders the resolved value directly):
-
-  ```typescript
-  <EnhancedSuspense>{promise}</EnhancedSuspense>
-  ```
-
-  This is equivalent to:
-
-  ```typescript
-  <EnhancedSuspense onSuccess={(data) => data}>{promise}</EnhancedSuspense>
-  ```
-
-- Without `children` (renders `null`):
-
-  ```typescript
-  <EnhancedSuspense />
-  ```
-
-## Using with JSX or Strings
-
-```typescript
-const ComponentA = () => <div>Hello</div>;
-const ComponentB = () => (
-  <EnhancedSuspense>
-    <ComponentA />
-  </EnhancedSuspense>
-);
-// Renders: <div>Hello</div>
-
-const ComponentC = () => <EnhancedSuspense>Hello again!!!</EnhancedSuspense>;
-// Renders: "Hello again!!!"
-```
-
-## Note on Promise Resolution
-
-When omitting `onSuccess`, the resolved value of `children` must be a valid `ReactNode`. If the promise resolves to a non-renderable type (e.g., `object`), use `onSuccess` to transform it:
-
-```typescript
-<EnhancedSuspense
-  onSuccess={(data) =>
-    Object.entries(data).map(([k, v]) => <div key={k}>{v}</div>)
-  }
->
-  {Promise.resolve({ name: "Roger", age: "28" })}
-</EnhancedSuspense>
-```
-
-## Usage Notes
-
-`EnhancedSuspense` can be used in both Server Components and Client Components. Its behavior depends on the promise passed as `children`:
-
-```typescript
-// In a Server Component with an immediately resolved promise
 import { EnhancedSuspense } from "react-enhanced-suspense";
+import { createContext } from "react";
 
-export default function ServerPage() {
-  const promise = Promise.resolve("Hello from server");
+const MyContext = createContext("Default value");
 
+export default function ShowContext() {
   return (
-    <EnhancedSuspense onSuccess={(data) => <div>{data}</div>}>
-      {promise}
+    <EnhancedSuspense onSuccess={(value) => <div>Context value: {value}</div>}>
+      {MyContext}
     </EnhancedSuspense>
   );
 }
 ```
 
-- **Immediately resolved promises**: If the promise is already resolved (e.g., `Promise.resolve`), `EnhancedSuspense` renders the result (`onSuccess`) directly on the server, bypassing the `fallback`.
+will render `Context value: Default value` on the screen. This is because React's `use` accepts either a Promise or context as resource.
 
-- **Pending promises**: For unresolved promises (e.g., async operations), `EnhancedSuspense` renders the `fallback` on the server and delegates promise resolution to the client via React's `use` hook.
+## Optional Props
 
-When used in a Server Component, `EnhancedSuspense` itself acts as a Server Component, while its internal `ErrorBoundary` (a Client Component) handles errors on the client.
+- `onSuccess`: A function that takes the resolved promise value and returns a `ReactNode`.
 
-## Integration with Waku and React 19 Server Functions
+- `onError`: A function that takes an `Error` and returns a `ReactNode`.
 
-`EnhancedSuspense` works seamlessly with [Waku](https://waku.gg), a React 19 framework, and React 19 Server Functions.
-
-### Approach 1: React 19 Server Function Returns a Component
-
-```typescript
-// src/components/home-page-client.tsx
-"use client";
-
-import { sayHello } from "../server-functions/say-hello";
-import { useState, useEffect } from "react";
-import { EnhancedSuspense } from "react-enhanced-suspense";
-
-export default function HomePageClient() {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  return isClient ? <EnhancedSuspense>{sayHello()}</EnhancedSuspense> : null;
-}
-```
-
-```typescript
-// src/server-functions/say-hello.tsx
-"use server";
-
-import SayHello from "../components/say-hello";
-
-export function sayHello() {
-  const promise = new Promise<string[]>((resolve, reject) =>
-    setTimeout(() => {
-      if (Math.random() > 0.2) {
-        resolve(["Roger", "Alex"]);
-      } else {
-        reject("Fail on data fetching");
-      }
-    }, 1000)
-  );
-
-  return <SayHello promise={promise} />;
-}
-```
-
-```typescript
-// src/components/say-hello.tsx
-"use client";
-
-import { EnhancedSuspense } from "react-enhanced-suspense";
-
-export default function SayHello({ promise }: { promise?: Promise<string[]> }) {
-  return (
-    <>
-      <div>hey</div>
-      <div>
-        <EnhancedSuspense
-          onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
-        >
-          {promise}
-        </EnhancedSuspense>
-      </div>
-    </>
-  );
-}
-```
-
-#### Waku Build/Deploy Workaround for Client Components
-
-If you are using Waku `0.21.23`, you'll need a workaround to build/deploy successfully (see below). This issue is fixed in Waku `0.21.24` and later, so the workaround won’t be needed anymore.
-
-If `SayHello` is a Client Component, `waku` (in its version `0.21.23`) requires you to use it in the JSX tree to avoid build/deploy errors:
-
-```typescript
-// src/pages/_layout.tsx
-import type { ReactNode } from "react";
-import SayHello from "../components/say-hello"; // 1. Import the Client Component returned by the Server Action
-
-type RootLayoutProps = { children: ReactNode };
-
-export default async function RootLayout({ children }: RootLayoutProps) {
-  const data = await getData();
-
-  return (
-    <div className="font-['Nunito']">
-      <meta name="description" content={data.description} />
-      <link rel="icon" type="image/png" href={data.icon} />
-      <main className="m-6 flex items-center *:min-h-64 *:min-w-64 lg:m-0 lg:min-h-svh lg:justify-center">
-        {children}
-      </main>
-      {/*2. Use it in the JSX tree without affecting the functionality of the app*/}
-      {false && <SayHello />}
-    </div>
-  );
-}
-```
-
-This is not needed if `SayHello` is a Server Component and doesn’t call or use any Client Component down the tree.
-
-### Approach 2: React 19 Server Function Returns a Promise
-
-```typescript
-// src/server-functions/say-hello.tsx
-"use server";
-
-export function sayHello() {
-  return new Promise<string[]>((resolve, reject) =>
-    setTimeout(() => {
-      if (Math.random() > 0.2) {
-        resolve(["Roger", "Alex"]);
-      } else {
-        reject("Fail on data fetching");
-      }
-    }, 1000)
-  );
-}
-```
-
-```typescript
-// src/components/home-page-client.tsx
-"use client";
-
-import { sayHello } from "../server-functions/say-hello";
-import { useState, useEffect } from "react";
-import SayHello from "./say-hello";
-
-export default function HomePageClient() {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  return isClient ? <SayHello promise={sayHello()} /> : null;
-}
-```
-
-**Note**: This approach works but may log errors in the console occasionally, making it less stable than the first approach. This instability arises because the promise is created directly in the Client Component and recreated on every render, as noted in the React documentation: "Prefer creating Promises in Server Components and passing them to Client Components over creating Promises in Client Components. Promises created in Client Components are recreated on every render. Promises passed from a Server Component to a Client Component are stable across re-renders." For better stability, prefer Approach 1, where the promise is created on the server and passed to the client.
+Apart from that it has the props that React's Suspense has, that is, `fallback` and `children` (refer to [React documentation](https://react.dev/reference/react/Suspense#props) for those).
 
 ## Requirements
 

@@ -1,43 +1,56 @@
-import { JSX, ReactNode, Suspense, use } from "react";
+import { ReactNode, Suspense, use, Context } from "react";
 import ErrorBoundary from "./error-boundary.js";
 
-type EnhancedSuspenseProps<T> = {
+interface EnhancedSuspenseBaseProps {
   fallback?: ReactNode;
-  children?: Promise<T> | JSX.Element | undefined | string;
-  onSuccess?: ((data: T) => ReactNode) | undefined;
-  onError?: (error: Error) => ReactNode;
-};
+  onError?: (error: any) => ReactNode;
+}
+
+interface EnhancedSuspenseWithPromiseProps<T>
+  extends EnhancedSuspenseBaseProps {
+  children: Promise<T> | Context<T>;
+  onSuccess: (data: T) => ReactNode;
+}
+
+interface EnhancedSuspenseWithoutPromiseProps
+  extends EnhancedSuspenseBaseProps {
+  children: ReactNode;
+  onSuccess?: undefined;
+}
+
+type EnhancedSuspenseProps<T> =
+  | EnhancedSuspenseWithPromiseProps<T>
+  | EnhancedSuspenseWithoutPromiseProps;
 
 const Use = <T,>({
-  promise,
+  resource,
   onSuccess,
 }: {
-  promise?: Promise<T> | JSX.Element | string;
-  onSuccess?: ((data: T) => ReactNode) | undefined;
+  resource: Promise<T> | React.Context<T>;
+  onSuccess: (data: T) => ReactNode;
 }) => {
-  if (!promise) return null;
-  if (
-    typeof promise === "string" ||
-    ("props" in promise && "type" in promise)
-  ) {
-    return promise;
-  }
-  const data = use(promise);
-  return onSuccess ? onSuccess(data) : (data as ReactNode);
+  const data = use(resource);
+  return onSuccess(data);
 };
 
 const EnhancedSuspense = <T,>({
-  fallback = "Loading...",
-  children: promise,
+  fallback,
+  children: resource,
   onSuccess,
   onError,
 }: EnhancedSuspenseProps<T>) => {
-  return (
+  const content = onSuccess ? (
+    <Use resource={resource} onSuccess={onSuccess} />
+  ) : (
+    resource
+  );
+
+  return onError ? (
     <ErrorBoundary onError={onError}>
-      <Suspense fallback={fallback}>
-        <Use promise={promise} onSuccess={onSuccess} />
-      </Suspense>
+      <Suspense fallback={fallback}>{content}</Suspense>
     </ErrorBoundary>
+  ) : (
+    <Suspense fallback={fallback}>{content}</Suspense>
   );
 };
 

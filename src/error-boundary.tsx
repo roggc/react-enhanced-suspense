@@ -3,7 +3,7 @@
 import { Component, ReactNode } from "react";
 
 type ErrorBoundaryProps = {
-  onError?: ((error: Error) => ReactNode) | undefined;
+  onError: (error: Error) => ReactNode;
   children: ReactNode;
 };
 
@@ -21,14 +21,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   render() {
     if (this.state.hasError && this.state.error) {
-      return this.props.onError ? (
-        this.props.onError(this.state.error)
-      ) : (
-        <div>
-          <h2>Ups</h2>
-          <p>{this.state.error.message}</p>
-        </div>
-      );
+      return this.props.onError(this.state.error);
     }
     return this.props.children;
   }
