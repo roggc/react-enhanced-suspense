@@ -12,9 +12,9 @@ npm i react-enhanced-suspense
 
 ## Usage
 
-Starting with v1.1.0, you can import the component in two ways:
+You can import the component in two ways:
 
-- **Named import**: Use this for continuity with v1.0.x or if you prefer explicit names:
+- **Named import**: Use this if you prefer explicit names:
 
   ```typescript
   import { EnhancedSuspense } from "react-enhanced-suspense";
@@ -109,7 +109,7 @@ export default function SayHello({ promise }: { promise: Promise<string[]> }) {
 }
 ```
 
-If we want to add an Error Boundary to the code, we can do it passing the optional prop `onError`. This will wrap the React's `Suspense` in an `ErrorBoundary` component:
+If we want to add an Error Boundary to the code, we can do it passing the optional prop `onError`. This will wrap React's `Suspense` in an `ErrorBoundary` component:
 
 ```typescript
 "use client";
@@ -119,7 +119,7 @@ import { EnhancedSuspense } from "react-enhanced-suspense";
 export default function Component() {
   return (
     <EnhancedSuspense
-      onError={(error) => <div>{error}</div>} // <--- this is key, wrapps React's Suspense in an ErrorBoundary component
+      onError={(error) => <div>{error}</div>} // <--- this is key, wraps React's Suspense in an ErrorBoundary component
     >
       {Promise.reject("Failed")}
     </EnhancedSuspense>
@@ -175,11 +175,15 @@ will render `Context value: Default value` on the screen. This is because React'
 
 ## Optional Props
 
-- `onSuccess`: A function that takes the resolved promise value and returns a `ReactNode`.
+- `onSuccess`: A function that takes the resolved value of a resource (a promise or React Context) and returns a `ReactNode`.
 
-- `onError`: A function that takes an `Error` and returns a `ReactNode`.
+- `onError`: A function that takes an `Error` (or a value of any type in case of immediately rejected promises) and returns a `ReactNode`.
 
-Apart from that it has the props that React's Suspense has, that is, `fallback` and `children` (refer to [React documentation](https://react.dev/reference/react/Suspense#props) for those).
+- `children`: Any `ReactNode` (same as React's `Suspense`), but must be a `Usable<T>` (e.g., `Promise<T>` or `Context<T>`) when `onSuccess` is provided.
+
+- `fallback`: Any `ReactNode` (same as React's `Suspense`)
+
+Refer to [React documentation](https://react.dev/reference/react/Suspense#props) for `children` and `fallback` props.
 
 ## Requirements
 
