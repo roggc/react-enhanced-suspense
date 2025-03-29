@@ -1,6 +1,6 @@
 # react-enhanced-suspense
 
-A React 19 component that extends `Suspense` with optional promise resolution (`onSuccess`) and error handling (`onError`).
+A React 19 component that extends `Suspense` with optional promise resolution (`onSuccess`), error handling (`onError`), and retry functionality (`retry`).
 
 ## Installation
 
@@ -28,15 +28,25 @@ You can import the component in two ways:
 
 Both are the same component under the hood. Pick the one that suits your project!
 
-This component can be used as a substitute for React's `Suspense`.
+This component can be used as a substitute for React's `Suspense` and adds enhanced features like promise resolution, error handling, and retry logic.
+
+## Key Features
+
+- **Server Component by Default**: When `retry` is not used (or set to `false`), `EnhancedSuspense` behaves as a Server Component by default.
+
+- **Client Component with Retry**: When `retry` is set to `true`, it becomes a Client Component to handle retry logic in the browser.
+
+- **Promise Resolution**: Use `onSuccess` to transform resolved promise or React Context values.
+
+- **Error Handling**: Use `onError` to wrap React's `Suspense` in an `ErrorBoundary` for custom error rendering.
+
+- **Retry**: Use `retry` to retry fetching data in case of failure.
 
 ## Basic Example
 
 If you have this component using React's `Suspense`:
 
 ```typescript
-"use client";
-
 import { Suspense, use } from "react";
 
 const Use = ({ promise }: { promise: Promise<string[]> | undefined }) => {
@@ -58,11 +68,9 @@ export default function SayHello({ promise }: { promise: Promise<string[]> }) {
 }
 ```
 
-You can rewrite it using `EnhancedSuspense`:
+You can rewrite it using `EnhancedSuspense` as a drop-in replacement:
 
 ```typescript
-"use client";
-
 import { use } from "react";
 import { EnhancedSuspense } from "react-enhanced-suspense";
 
@@ -85,11 +93,11 @@ export default function SayHello({ promise }: { promise: Promise<string[]> }) {
 }
 ```
 
-and will be exactly the same, because `EnhancedSuspense` behaves exactly as React's `Suspense` when no `onSuccess` prop or `onError` prop is passed. The grace of `EnhancedSuspense` is that we can pass an optional `onSuccess` prop when the `children` is a promise and we want to manipulate the resolved value of the promise, like in this case. So, in this case, with `EnhancedSuspense`, we can write directly:
+When no `onSucces`, `onError`, or `retry` props are passed, `EnhancedSuspense` behaves like React's `Suspense`.
+
+## Promise Resolution with `onSuccess`
 
 ```typescript
-"use client";
-
 import { EnhancedSuspense } from "react-enhanced-suspense";
 
 export default function SayHello({ promise }: { promise: Promise<string[]> }) {
@@ -99,7 +107,7 @@ export default function SayHello({ promise }: { promise: Promise<string[]> }) {
       <div>
         <EnhancedSuspense
           fallback="Loading..."
-          onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)} // <--- this is key, makes the component use React's "use" function under the hood
+          onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
         >
           {promise}
         </EnhancedSuspense>
@@ -109,29 +117,31 @@ export default function SayHello({ promise }: { promise: Promise<string[]> }) {
 }
 ```
 
-If we want to add an Error Boundary to the code, we can do it passing the optional prop `onError`. This will wrap React's `Suspense` in an `ErrorBoundary` component:
+Here, `onSuccess` uses React’s `use` hook under the hood to resolve the promise and transform the result.
+
+## Error Handling with `onError`
+
+Add an `ErrorBoundary` by passing the `onError` prop:
 
 ```typescript
-"use client";
-
 import { EnhancedSuspense } from "react-enhanced-suspense";
 
 export default function Component() {
   return (
-    <EnhancedSuspense
-      onError={(error) => <div>{error}</div>} // <--- this is key, wraps React's Suspense in an ErrorBoundary component
-    >
+    <EnhancedSuspense onError={(error) => <div>{error}</div>}>
       {Promise.reject("Failed")}
     </EnhancedSuspense>
   );
 }
 ```
 
-If we want the two options, that is, an `ErrorBoundary` plus the manipulation of the value returned by the promise, we pass the two optional props:
+The `onError` prop wraps React's `Suspense` in an `ErrorBoundary` component for custom error rendering.
+
+## Combining `onSuccess` and `onError`
+
+Use both props together for promise resolution and error handling:
 
 ```typescript
-"use client";
-
 import { EnhancedSuspense } from "react-enhanced-suspense";
 
 export default function SayHello({ promise }: { promise: Promise<string[]> }) {
@@ -152,7 +162,9 @@ export default function SayHello({ promise }: { promise: Promise<string[]> }) {
 }
 ```
 
-Finally, show this example where the resource passed as children to `EnhancedSuspense` is not a promise but a `Context`:
+## React Context Example
+
+`EnhancedSuspense` also supports React Context as a Usable resource:
 
 ```typescript
 "use client";
@@ -171,17 +183,67 @@ export default function ShowContext() {
 }
 ```
 
-will render `Context value: Default value` on the screen. This is because React's `use` accepts either a Promise or context as resource.
+This renders `Context value: Default value` because React’s `use` accepts both promises and React Contexts.
+
+## Retry Functionality
+
+When `retry` is set to `true`, `EnhancedSuspense` becomes a Client Component and retries failed promises with configurable options:
+
+```typescript
+"use client";
+
+import { EnhancedSuspense } from "react-enhanced-suspense";
+
+export default function SayHello() {
+  return (
+    <>
+      <div>hey</div>
+      <div>
+        <EnhancedSuspense retry>
+          {() =>
+            new Promise<string[]>((resolve, reject) => {
+              setTimeout(() => {
+                if (Math.random() > 0.2) {
+                  resolve(["Roger", "Alex"]);
+                } else {
+                  reject("Fail on data fetching");
+                }
+              }, 1000);
+            })
+          }
+          {/* Must be a function returning a promise when retry is true */}
+        </EnhancedSuspense>
+      </div>
+    </>
+  );
+}
+```
+
+- Note: When `retry` is `true`, `children` must be a function that returns a promise (e.g., `() => Promise<T>`), not a promise directly, to allow multiple executions during retries.
 
 ## Optional Props
 
-- `onSuccess`: A function that takes the resolved value of a resource (a promise or React Context) and returns a `ReactNode`.
+All props are optional. These are:
 
-- `onError`: A function that takes an `Error` (or a value of any type in case of immediately rejected promises) and returns a `ReactNode`.
+- **`onSuccess`**: A function that takes the resolved value of a resource (promise or React Context) and returns a `ReactNode`.
 
-- `children`: Any `ReactNode` (same as React's `Suspense`), but must be a `Usable<T>` (e.g., `Promise<T>` or `Context<T>`) when `onSuccess` is provided.
+- **`onError`**: A function that takes an `Error` (or any value for immediately rejected promises) and returns a `ReactNode`.
 
-- `fallback`: Any `ReactNode` (same as React's `Suspense`)
+- **`children`**: Any `ReactNode` (same as React’s `Suspense`). Must be:
+
+  - A `Usable<T>` (e.g., `Promise<T>` or `Context<T>`) when `onSuccess` is provided and `retry` is `false` or omitted.
+
+  - A function `() => Promise<T>` when `retry` is `true`.
+
+- **`fallback`**: Any `ReactNode` (same as React’s `Suspense`).
+
+- **`retry`**: Boolean. Set to `true` to enable retry logic (makes it a Client Component). Defaults to `false` (Server Component by default).
+
+- **`retryCount`**: Number of retry attempts (default: `1`). Only applies when `retry` is `true`.
+
+- **`retryDelay`**: Delay in milliseconds between retries (default: `0`). Only applies when `retry` is `true`.
+
+- **`backoff`**: Boolean. Enables exponential backoff for retries (default: `false`). Only applies when `retry` is `true`.
 
 Refer to [React documentation](https://react.dev/reference/react/Suspense#props) for `children` and `fallback` props.
 

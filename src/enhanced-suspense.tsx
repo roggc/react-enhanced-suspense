@@ -1,39 +1,6 @@
-import { ReactNode, Suspense, use } from "react";
-import type { Usable } from "react";
-import ErrorBoundary from "./error-boundary.js";
-
-interface EnhancedSuspenseBaseProps {
-  fallback?: ReactNode;
-  onError?: (error: any) => ReactNode;
-}
-
-interface EnhancedSuspenseWithPromiseProps<T>
-  extends EnhancedSuspenseBaseProps {
-  children: Usable<T>;
-  onSuccess: (data: T) => ReactNode;
-}
-
-interface EnhancedSuspenseWithoutPromiseProps
-  extends EnhancedSuspenseBaseProps {
-  children?: ReactNode;
-  onSuccess?: undefined;
-}
-
-type EnhancedSuspenseProps<T> =
-  | EnhancedSuspenseWithPromiseProps<T>
-  | EnhancedSuspenseWithoutPromiseProps;
-
-/** Resolves a usable resource with `use` and applies `onSuccess`. */
-const Use = <T,>({
-  resource,
-  onSuccess,
-}: {
-  resource: Usable<T>;
-  onSuccess: (data: T) => ReactNode;
-}) => {
-  const data = use(resource);
-  return onSuccess(data);
-};
+import type { EnhancedSuspenseProps } from "./types/types.js";
+import EnhancedSuspenseWithRetry from "./enhanced-suspense-with-retry.js";
+import EnhancedSuspenseWithoutRetry from "./enhanced-suspense-without-retry.js";
 
 /**
  * Enhances React's `Suspense` with optional resource resolution and error handling.
@@ -76,24 +43,11 @@ const Use = <T,>({
  * }
  * ```
  */
-const EnhancedSuspense = <T,>({
-  fallback,
-  children: resource,
-  onSuccess,
-  onError,
-}: EnhancedSuspenseProps<T>) => {
-  const content = onSuccess ? (
-    <Use resource={resource} onSuccess={onSuccess} />
+const EnhancedSuspense = <T,>(props: EnhancedSuspenseProps<T>) => {
+  return props.retry ? (
+    <EnhancedSuspenseWithRetry {...props} />
   ) : (
-    resource
-  );
-
-  const wrappedContent = <Suspense fallback={fallback}>{content}</Suspense>;
-
-  return onError ? (
-    <ErrorBoundary onError={onError}>{wrappedContent}</ErrorBoundary>
-  ) : (
-    wrappedContent
+    <EnhancedSuspenseWithoutRetry {...props} />
   );
 };
 
