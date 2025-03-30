@@ -4,7 +4,11 @@ import { Suspense, useMemo } from "react";
 import type { ReactNode, Usable } from "react";
 import ErrorBoundary from "./error-boundary.js";
 import Use from "./use.js";
-import { useGetErrorKey, useRetryablePromise } from "./hooks/index.js";
+import {
+  useGetErrorKey,
+  useRetryablePromise,
+  useTimeouts,
+} from "./hooks/index.js";
 import type {
   EnhancedSuspenseWithRetryProps,
   RetryProps,
@@ -18,21 +22,28 @@ const EnhancedSuspenseWithRetry = <T,>(
     children: resource,
     onSuccess,
     onError,
+    timeouts = [],
+    timeoutFallbacks = [],
     ...retryProps
   } = props;
-  const { retry, retryCount, retryDelay, backoff } = retryProps as RetryProps;
+  const { retry, retryCount, retryDelay, backoff, onRetryFallback } =
+    retryProps as RetryProps;
+
   const normalizedResource = useMemo(
     () =>
       retry ? (resource as () => Promise<T>) : () => resource as Promise<T>,
     [retry, resource]
   );
-  const enhancedResource = useRetryablePromise(
+
+  const [enhancedResource, attempt] = useRetryablePromise(
     normalizedResource,
     retry,
     retryCount,
     retryDelay,
     backoff
   );
+
+  const currentStage = useTimeouts(timeouts, enhancedResource ?? resource);
 
   const content = onSuccess ? (
     retry ? (
@@ -56,7 +67,16 @@ const EnhancedSuspenseWithRetry = <T,>(
     (resource as ReactNode)
   );
 
-  const wrappedContent = <Suspense fallback={fallback}>{content}</Suspense>;
+  const loadingContent =
+    retry && onRetryFallback && attempt > 0
+      ? onRetryFallback(attempt)
+      : currentStage >= 0 && currentStage < timeoutFallbacks.length
+      ? timeoutFallbacks[currentStage]
+      : fallback;
+
+  const wrappedContent = (
+    <Suspense fallback={loadingContent}>{content}</Suspense>
+  );
 
   const errorKey = useGetErrorKey<T>(props);
 

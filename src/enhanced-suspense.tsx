@@ -1,6 +1,7 @@
 import type { EnhancedSuspenseProps } from "./types/types.js";
 import EnhancedSuspenseWithRetry from "./enhanced-suspense-with-retry.js";
 import EnhancedSuspenseWithoutRetry from "./enhanced-suspense-without-retry.js";
+import EnhancedSuspenseWithoutRetryWithTimeouts from "./enhanced-suspense-without-retry-with-timeouts.js";
 
 /**
  * Enhances React's `Suspense` with optional resource resolution, error handling, and retry functionality.
@@ -26,6 +27,9 @@ import EnhancedSuspenseWithoutRetry from "./enhanced-suspense-without-retry.js";
  * @param {number} [props.retryCount] - Number of retry attempts (default: `1`). Only applies when `retry` is `true`.
  * @param {number} [props.retryDelay] - Delay in milliseconds between retries (default: `0`). Only applies when `retry` is `true`.
  * @param {boolean} [props.backoff] - Enables exponential backoff for retries (default: `false`). Only applies when `retry` is `true`.
+ * @param {(attempt: number) => ReactNode} [props.onRetryFallback] - Fallback UI shown on each retry attempt. Only applies when `retry` is `true`.
+ * @param {number []} [props.timeouts] - Array of timeouts when to show timeout fallbacks.
+ * @param {ReactNode []} [props.timeoutFallbacks] - Fallbacks UI to show on each timeout specified in `timeouts`. Only applies when `timeouts` it's not an empty array.
  * @returns {ReactNode} The enhanced suspense component, optionally wrapped in an error boundary.
  * @see https://www.npmjs.com/package/react-enhanced-suspense - Package documentation.
  * @see https://react.dev/reference/react/Suspense - React's Suspense documentation.
@@ -55,25 +59,37 @@ import EnhancedSuspenseWithoutRetry from "./enhanced-suspense-without-retry.js";
  * "use client";
  *
  * import Suspense from "react-enhanced-suspense";
+ * import { useState } from "react";
  *
  * export default function SayHelloRetry() {
+ * const [retryKey, setRetryKey] = useState(0);
+ *
  *   return (
  *     <>
  *       <div>Hey</div>
  *       <div>
  *         <Suspense
+ *           key={retryKey}
  *           fallback={<div>Loading...</div>}
  *           onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
- *           onError={(error) => <div>{error.message}</div>}
+ *           onError={(error) => (
+ *             <div>
+ *               <div>{error.message}</div>
+ *               <button onClick={() => setRetryKey(k => k + 1)}>
+ *                 Retry
+ *               </button>
+ *             </div>
+ *           )}
  *           retry
  *           retryCount={3}
  *           retryDelay={1000}
  *           backoff
+ *           onRetryFallback={(attempt) => <div>{`Retrying ${attempt}...`}</div>}
  *         >
  *           {() =>
  *             new Promise<string[]>((resolve, reject) => {
  *               setTimeout(() => {
- *                 if (Math.random() > 0.2) {
+ *                 if (Math.random() > 0.5) {
  *                   resolve(["Roger", "Alex"]);
  *                 } else {
  *                   reject("Fail on data fetching");
@@ -91,6 +107,8 @@ import EnhancedSuspenseWithoutRetry from "./enhanced-suspense-without-retry.js";
 const EnhancedSuspense = <T,>(props: EnhancedSuspenseProps<T>) => {
   return props.retry ? (
     <EnhancedSuspenseWithRetry {...props} />
+  ) : props.timeouts?.length ? (
+    <EnhancedSuspenseWithoutRetryWithTimeouts {...props} />
   ) : (
     <EnhancedSuspenseWithoutRetry {...props} />
   );

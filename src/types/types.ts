@@ -3,6 +3,8 @@ import type { Usable, ReactNode } from "react";
 type EnhancedSuspenseBaseProps = {
   fallback?: ReactNode;
   onError?: (error: any) => ReactNode;
+  timeouts?: number[];
+  timeoutFallbacks?: ReactNode[];
 };
 
 export type RetryProps = {
@@ -10,6 +12,7 @@ export type RetryProps = {
   retryCount?: number | undefined;
   retryDelay?: number | undefined;
   backoff?: boolean | undefined;
+  onRetryFallback?: (attempt: number) => ReactNode;
 };
 
 type EnhancedSuspenseWithRetryWithPromiseProps<T> = RetryProps & {

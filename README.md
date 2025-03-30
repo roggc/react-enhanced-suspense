@@ -1,6 +1,6 @@
 # react-enhanced-suspense
 
-A React 19 component that extends React's `Suspense` with optional promise resolved values handling (`onSuccess`), error handling (`onError`), and retry functionality of failing promises (`retry`).
+A React 19 component that extends React's `Suspense` with optional promise resolved values handling (`onSuccess`), error handling (`onError`), retry functionality of failing promises (`retry`), and more.
 
 ## Installation
 
@@ -28,7 +28,7 @@ You can import the component in two ways:
 
 Both are the same component under the hood. Pick the one that suits your project!
 
-This component can be used as a substitute for React's `Suspense` and adds enhanced features like promise resolution, error handling, and retry logic.
+This component can be used as a substitute for React's `Suspense` and adds enhanced features like promise resolution, error handling, retry logic, and more.
 
 ## Key Features
 
@@ -41,6 +41,8 @@ This component can be used as a substitute for React's `Suspense` and adds enhan
 - **Error Handling**: Use `onError` to wrap React's `Suspense` in an `ErrorBoundary` for custom error rendering.
 
 - **Retry**: Use `retry` to retry fetching data in case of failure.
+
+- **Timeout fallbacks**: Use `timeouts` and `timeoutFallbacks` toguether to update fallback shown to enhance user experience.
 
 ## Basic Example
 
@@ -93,7 +95,7 @@ export default function SayHello({ promise }: { promise: Promise<string[]> }) {
 }
 ```
 
-When no `onSucces`, `onError`, or `retry` props are passed, `EnhancedSuspense` behaves like React's `Suspense`.
+When only `fallback` or `children` props are passed, `EnhancedSuspense` behaves like React's `Suspense`.
 
 ## Promise Resolution with `onSuccess`
 
@@ -199,11 +201,26 @@ export default function SayHello() {
     <>
       <div>hey</div>
       <div>
-        <EnhancedSuspense retry>
+        <EnhancedSuspense
+          retry
+          retryCount={10}
+          retryDelay={500}
+          backoff
+          onRetryFallback={(attempt) => <div>{`Retrying ${attempt}...`}</div>}
+          onError={(error) => (
+            <div>
+              <div>{error.message}</div>
+              <button onClick={() => setRetryKey((prev) => prev + 1)}>
+                Retry
+              </button>
+            </div>
+          )}
+          onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
+        >
           {() =>
             new Promise<string[]>((resolve, reject) => {
               setTimeout(() => {
-                if (Math.random() > 0.2) {
+                if (Math.random() > 0.7) {
                   resolve(["Roger", "Alex"]);
                 } else {
                   reject("Fail on data fetching");
@@ -220,6 +237,44 @@ export default function SayHello() {
 ```
 
 - **Note**: When `retry` is `true`, `children` must be a function that returns a promise (e.g., `() => Promise<T>`), not a promise directly, to allow multiple executions during retries.
+
+## Updating fallback UI if it takes too long (`timeouts` and `timeoutFallbacks`)
+
+```typescript
+"use client";
+
+import Suspense from "react-enhanced-suspense";
+import { useState } from "react";
+
+const VERY_LONG_TIME = 15000;
+
+export default function Timeouts({}) {
+  const [retryKey, setRetryKey] = useState(0);
+
+  return (
+    <>
+      <Suspense
+        key={retryKey}
+        fallback="Loading..."
+        timeouts={[3000, 6000, 10000]}
+        timeoutFallbacks={[
+          "Still working...",
+          "Taking longer...",
+          <button onClick={() => setRetryKey((prev) => prev + 1)}>
+            Retry
+          </button>,
+        ]}
+      >
+        {
+          new Promise<string>((resolve) =>
+            setTimeout(() => resolve("Done"), VERY_LONG_TIME)
+          )
+        }
+      </Suspense>
+    </>
+  );
+}
+```
 
 ## Optional Props
 
@@ -244,6 +299,12 @@ All props are optional. These are:
 - **`retryDelay`**: Delay in milliseconds between retries (default: `0`). Only applies when `retry` is `true`.
 
 - **`backoff`**: Boolean. Enables exponential backoff for retries (default: `false`). Only applies when `retry` is `true`.
+
+- **`onRetryFallback`**: A function `(attempt: number) => ReactNode`. Fallback UI to be shown on each retry attempt. Only applies when `retry` is `true`.
+
+- **`timeouts`**: An array of numbers. Timeouts in milliseconds to update fallback UI shown. Only applies when `onRetryFallback` is not used.
+
+- **`timeoutFallbacks`**: An array of React Nodes (`ReactNode []`). Fallback UI's to show after each timeout specified in `timeouts`. Only applies when `timeouts` is not an empty array.
 
 Refer to [React documentation](https://react.dev/reference/react/Suspense#props) for `children` and `fallback` props.
 

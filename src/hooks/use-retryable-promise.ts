@@ -15,7 +15,7 @@ export function useRetryablePromise<T>(
   retryCount: number = 1,
   retryDelay: number = 0,
   backoff: boolean = false
-): Promise<T> | undefined {
+): [Promise<T> | undefined, number] {
   const [promiseCache] = useState(new Map<() => Promise<T>, Promise<T>>());
   const [isCancelled, setIsCancelled] = useState({
     value: false,
@@ -24,6 +24,7 @@ export function useRetryablePromise<T>(
     value: [],
   });
   const cancelRef = useRef<() => void>(() => {});
+  const [attempt, setAttempt] = useState(0);
 
   useMemo(() => {
     const executeWithRetry = async () => {
@@ -33,7 +34,7 @@ export function useRetryablePromise<T>(
           throw new Error("Cancelled");
         }
         try {
-          console.log("Attempt", attempts);
+          setAttempt(attempts);
           return await resource();
         } catch (error) {
           if (attempts < retryCount) {
@@ -78,5 +79,5 @@ export function useRetryablePromise<T>(
     };
   }, [resource, retryCount, retryDelay, retry, backoff]);
 
-  return retry ? promiseCache.get(resource) : undefined;
+  return retry ? [promiseCache.get(resource), attempt] : [undefined, attempt];
 }
