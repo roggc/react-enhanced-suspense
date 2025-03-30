@@ -1,6 +1,6 @@
 # react-enhanced-suspense
 
-A React 19 component that extends `Suspense` with optional promise resolution (`onSuccess`), error handling (`onError`), and retry functionality (`retry`).
+A React 19 component that extends React's `Suspense` with optional promise resolved values handling (`onSuccess`), error handling (`onError`), and retry functionality of failing promises (`retry`).
 
 ## Installation
 
@@ -219,7 +219,7 @@ export default function SayHello() {
 }
 ```
 
-- Note: When `retry` is `true`, `children` must be a function that returns a promise (e.g., `() => Promise<T>`), not a promise directly, to allow multiple executions during retries.
+- **Note**: When `retry` is `true`, `children` must be a function that returns a promise (e.g., `() => Promise<T>`), not a promise directly, to allow multiple executions during retries.
 
 ## Optional Props
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import type { ReactNode, Usable } from "react";
 import ErrorBoundary from "./error-boundary.js";
 import Use from "./use.js";
@@ -33,8 +33,6 @@ const EnhancedSuspenseWithRetry = <T,>(
     retryDelay,
     backoff
   );
-
-  const defaultOnSuccess = useCallback((data: T) => data as ReactNode, []);
 
   const content = onSuccess ? (
     retry ? (
