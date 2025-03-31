@@ -223,7 +223,7 @@ export default function SayHello() {
                 if (Math.random() > 0.7) {
                   resolve(["Roger", "Alex"]);
                 } else {
-                  reject("Fail on data fetching");
+                  reject(new Error("Fail on data fetching"));
                 }
               }, 1000);
             })
