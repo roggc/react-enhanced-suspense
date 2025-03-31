@@ -1,3 +1,5 @@
+"use client";
+
 import { Suspense } from "react";
 import type { Usable } from "react";
 import ErrorBoundary from "./error-boundary.js";
