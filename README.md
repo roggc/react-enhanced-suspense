@@ -1,6 +1,6 @@
 # react-enhanced-suspense
 
-A React 19 component that extends React's `Suspense` with optional promise resolved values handling (`onSuccess`), error handling (`onError`), retry functionality of failing promises (`retry`), and more.
+A React 19 component that extends React's `Suspense` with optional powerful features like promise resolved values handling (`onSuccess`), error handling (`onError`), retry functionality of failing promises (`retry`), caching (`cacheKey`), and timeout fallbacks (`timeouts`).
 
 ## Installation
 
@@ -28,49 +28,23 @@ You can import the component in two ways:
 
 Both are the same component under the hood. Pick the one that suits your project!
 
-This component can be used as a substitute for React's `Suspense` and adds enhanced features like promise resolution, error handling, retry logic, and more.
+This component can be used as a substitute for React's `Suspense` and adds enhanced features like promise resolution handling, error handling, retry logic, caching, and more.
 
 ## Key Features
 
-- **Server Component by Default**: When `retry` is not used (or set to `false`), `EnhancedSuspense` behaves as a Server Component by default.
-
-- **Client Component with Retry**: When `retry` is set to `true`, it becomes a Client Component to handle retry logic in the browser.
-
-- **Promise Resolution**: Use `onSuccess` to transform resolved promise or React Context values.
+- **Promise Resolution Handling**: Use `onSuccess` to transform resolved promise or React Context values.
 
 - **Error Handling**: Use `onError` to wrap React's `Suspense` in an `ErrorBoundary` for custom error rendering.
 
-- **Retry**: Use `retry` to retry fetching data in case of failure.
+- **Retry Logic**: Automatically retry failed promises with `retry`, configurable with `retryCount`, `retryDelay`, `backoff`, and `onRetryFallback`.
 
-- **Timeout fallbacks**: Use `timeouts` and `timeoutFallbacks` toguether to update fallback shown to enhance user experience.
+- **Caching**: Store promise results in memory or `localStorage` with `cacheKey`, `cacheTTL`, `cacheVersion`, and `cachePersist`.
+
+- **Timeout Fallbacks**: Update the fallback UI dynamically with `timeouts` and `timeoutFallbacks` for long-running operations.
 
 ## Basic Example
 
-If you have this component using React's `Suspense`:
-
-```typescript
-import { Suspense, use } from "react";
-
-const Use = ({ promise }: { promise: Promise<string[]> | undefined }) => {
-  const data = use(promise);
-  return data.map((item) => <div key={item}>{item}</div>);
-};
-
-export default function SayHello({ promise }: { promise: Promise<string[]> }) {
-  return (
-    <>
-      <div>hey</div>
-      <div>
-        <Suspense fallback="Loading...">
-          <Use promise={promise} />
-        </Suspense>
-      </div>
-    </>
-  );
-}
-```
-
-You can rewrite it using `EnhancedSuspense` as a drop-in replacement:
+Replace React’s `Suspense` with `EnhancedSuspense`:
 
 ```typescript
 import { use } from "react";
@@ -95,9 +69,9 @@ export default function SayHello({ promise }: { promise: Promise<string[]> }) {
 }
 ```
 
-When only `fallback` or `children` props are passed, `EnhancedSuspense` behaves like React's `Suspense`.
+When only `fallback` and `children` are used, `EnhancedSuspense` behaves exactly like React’s `Suspense`.
 
-## Promise Resolution with `onSuccess`
+## Promise Resolution Handling With `onSuccess`
 
 ```typescript
 import { EnhancedSuspense } from "react-enhanced-suspense";
@@ -119,18 +93,18 @@ export default function SayHello({ promise }: { promise: Promise<string[]> }) {
 }
 ```
 
-Here, `onSuccess` uses React’s `use` hook under the hood to resolve the promise and transform the result.
+`onSuccess` leverages React’s `use` hook to resolve the promise and transform the result.
 
-## Error Handling with `onError`
+## Error Handling With `onError`
 
-Add an `ErrorBoundary` by passing the `onError` prop:
+Handle errors with a custom UI using `onError`:
 
 ```typescript
 import { EnhancedSuspense } from "react-enhanced-suspense";
 
 export default function Component() {
   return (
-    <EnhancedSuspense onError={(error) => <div>{error}</div>}>
+    <EnhancedSuspense onError={(error) => <div>{error.message}</div>}>
       {Promise.reject("Failed")}
     </EnhancedSuspense>
   );
@@ -138,31 +112,6 @@ export default function Component() {
 ```
 
 The `onError` prop wraps React's `Suspense` in an `ErrorBoundary` component for custom error rendering.
-
-## Combining `onSuccess` and `onError`
-
-Use both props together for promise resolution and error handling:
-
-```typescript
-import { EnhancedSuspense } from "react-enhanced-suspense";
-
-export default function SayHello({ promise }: { promise: Promise<string[]> }) {
-  return (
-    <>
-      <div>hey</div>
-      <div>
-        <EnhancedSuspense
-          fallback="Loading..."
-          onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
-          onError={(error) => <div>{`Error: ${error.message}`}</div>}
-        >
-          {promise}
-        </EnhancedSuspense>
-      </div>
-    </>
-  );
-}
-```
 
 ## React Context Example
 
@@ -187,21 +136,25 @@ export default function ShowContext() {
 
 This renders `Context value: Default value` because React’s `use` accepts both promises and React Contexts.
 
-## Retry Functionality
+## Retry Logic (Client Component)
 
-When `retry` is set to `true`, `EnhancedSuspense` becomes a Client Component and retries failed promises with configurable options:
+Retry failed promises with configurable options:
 
 ```typescript
 "use client";
 
 import { EnhancedSuspense } from "react-enhanced-suspense";
+import { useState } from "react";
 
 export default function SayHello() {
+  const [key, setKey] = useState(0);
+
   return (
     <>
       <div>hey</div>
       <div>
         <EnhancedSuspense
+          key={key}
           retry
           retryCount={10}
           retryDelay={500}
@@ -210,9 +163,7 @@ export default function SayHello() {
           onError={(error) => (
             <div>
               <div>{error.message}</div>
-              <button onClick={() => setRetryKey((prev) => prev + 1)}>
-                Retry
-              </button>
+              <button onClick={() => setKey((k) => k + 1)}>Remount</button>
             </div>
           )}
           onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
@@ -223,7 +174,7 @@ export default function SayHello() {
                 if (Math.random() > 0.7) {
                   resolve(["Roger", "Alex"]);
                 } else {
-                  reject(new Error("Fail on data fetching"));
+                  reject("Fail on data fetching");
                 }
               }, 1000);
             })
@@ -236,9 +187,73 @@ export default function SayHello() {
 }
 ```
 
-- **Note**: When `retry` is `true`, `children` must be a function that returns a promise (e.g., `() => Promise<T>`), not a promise directly, to allow multiple executions during retries.
+- **Note**: When `retry` is `true`, `children` must be a function returning a promise (`() => Promise<T>`).
 
-## Updating fallback UI if it takes too long (`timeouts` and `timeoutFallbacks`)
+## Caching (Cient Component)
+
+Cache promise results with `cacheKey`:
+
+```typescript
+"use client";
+
+import Suspense from "react-enhanced-suspense";
+import { useState } from "react";
+
+export default function Cache() {
+  const [key, setKey] = useState(0);
+  const [cacheVersion, setCacheVersion] = useState(0);
+  const [cachePersist, setCachePersist] = useState(false);
+
+  return (
+    <>
+      <button onClick={() => setKey((k) => k + 1)}>Remount</button>
+      <button onClick={() => setCacheVersion((cchV) => cchV + 1)}>
+        increase cache version
+      </button>
+      <button onClick={() => setCacheVersion((cchV) => cchV - 1)}>
+        decrease cache version
+      </button>
+      <button onClick={() => setCachePersist((cchP) => !cchP)}>
+        toggle persist cache
+      </button>
+      <Suspense
+        cacheKey="my-cache"
+        cacheTTL={60000}
+        cacheVersion={cacheVersion}
+        cachePersist={cachePersist}
+        key={key}
+        fallback="Loading..."
+        onError={(error) => <div>{error.message}</div>}
+        onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
+      >
+        {() =>
+          new Promise<string[]>((resolve, reject) => {
+            setTimeout(() => {
+              if (Math.random() > 0.2) {
+                resolve(["Roger", "Alex"]);
+              } else {
+                reject("Fail on data fetching");
+              }
+            }, 1000);
+          })
+        }
+      </Suspense>
+    </>
+  );
+}
+```
+
+- `cacheTTL`: Sets expiration time (ms).
+
+- `cacheVersion`: Invalidates cache when changed.
+
+- `cachePersist`: Persists cache in `localStorage`.
+
+- **Note**: When `cacheKey` is used, `children` must be a function returning a promise (`() => Promise<T>`).
+
+## Timeout Fallbacks (Client Component)
+
+Update fallback UI for long-running operations:
 
 ```typescript
 "use client";
@@ -249,20 +264,18 @@ import { useState } from "react";
 const VERY_LONG_TIME = 15000;
 
 export default function Timeouts({}) {
-  const [retryKey, setRetryKey] = useState(0);
+  const [key, setKey] = useState(0);
 
   return (
     <>
       <Suspense
-        key={retryKey}
+        key={key}
         fallback="Loading..."
         timeouts={[3000, 6000, 10000]}
         timeoutFallbacks={[
           "Still working...",
           "Taking longer...",
-          <button onClick={() => setRetryKey((prev) => prev + 1)}>
-            Retry
-          </button>,
+          <button onClick={() => setKey((k) => k + 1)}>Remount</button>,
         ]}
       >
         {
@@ -276,23 +289,23 @@ export default function Timeouts({}) {
 }
 ```
 
-## Optional Props
+## Props
 
-All props are optional. These are:
+All props are optional:
 
 - **`onSuccess`**: A function that takes the resolved value of a resource (promise or React Context) and returns a `ReactNode`.
 
-- **`onError`**: A function that takes an `Error` (or any value for immediately rejected promises) and returns a `ReactNode`.
+- **`onError`**: A function that takes an `Error` and returns a `ReactNode`.
 
 - **`children`**: Any `ReactNode` (same as React’s `Suspense`). Must be:
 
-  - A `Usable<T>` (e.g., `Promise<T>` or `Context<T>`) when `onSuccess` is provided and `retry` is `false` or omitted.
+  - A `Usable<T>` (e.g., `Promise<T>` or `Context<T>`) when `onSuccess` is provided and no `retry` or `cacheKey` are used.
 
-  - A function `() => Promise<T>` when `retry` is `true`.
+  - A function `() => Promise<T>` when `retry` or `cacheKey` (or both) are used.
 
 - **`fallback`**: Any `ReactNode` (same as React’s `Suspense`).
 
-- **`retry`**: Boolean. Set to `true` to enable retry logic (makes it a Client Component). Defaults to `false` (Server Component by default).
+- **`retry`**: Boolean. Set to `true` to enable retry logic (makes it a Client Component). Defaults to `false`.
 
 - **`retryCount`**: Number of retry attempts (default: `1`). Only applies when `retry` is `true`.
 
@@ -302,12 +315,26 @@ All props are optional. These are:
 
 - **`onRetryFallback`**: A function `(attempt: number) => ReactNode`. Fallback UI to be shown on each retry attempt. Only applies when `retry` is `true`.
 
-- **`timeouts`**: An array of numbers. Timeouts in milliseconds to update fallback UI shown. Only applies when `onRetryFallback` is not used.
+- **`cacheKey`**: A string. Saves the resolved value of a promise into a memory cache (makes it a Client Component).
+
+- **`cacheTTL`**: A number. Sets an expiration time in milliseconds for the cached value. Only applies when `cacheKey` is used.
+
+- **`cacheVersion`**: A number. Invalidates previous cached value when it's increased or decreased (changed). Only applies when `cacheKey` is used.
+
+- **`cachePersist`**: A boolean. When `true` it persists the cached value into `localStorage`. Only applies when `cacheKey` is used.
+
+- **`timeouts`**: An array of numbers. Timeouts in milliseconds to update fallback UI shown (makes it a Client Component). Only applies when `onRetryFallback` is not used.
 
 - **`timeoutFallbacks`**: An array of React Nodes (`ReactNode []`). Fallback UI's to show after each timeout specified in `timeouts`. Only applies when `timeouts` is not an empty array.
 
 Refer to [React documentation](https://react.dev/reference/react/Suspense#props) for `children` and `fallback` props.
 
+All props can be used toguether.
+
 ## Requirements
 
-- React 19 or higher (due to the use of `use`).
+- React 19+: Uses the `use` hook for promise/Context resolution.
+
+## License
+
+MIT

@@ -1,12 +1,12 @@
 import { Suspense } from "react";
-import type { Usable } from "react";
+import type { ReactNode, Usable } from "react";
 import ErrorBoundary from "./error-boundary.js";
 import Use from "./use.js";
-import type { EnhancedSuspenseWithoutRetryProps } from "./types/types.js";
+import type { EnhancedSuspenseServerProps } from "./types/types.js";
 import { useGetErrorKey } from "./hooks/index.js";
 
 const EnhancedSuspenseWithoutRetry = <T,>(
-  props: EnhancedSuspenseWithoutRetryProps<T>
+  props: EnhancedSuspenseServerProps<T>
 ) => {
   const { fallback, children: resource, onSuccess, onError } = props;
 
@@ -21,7 +21,9 @@ const EnhancedSuspenseWithoutRetry = <T,>(
     resource
   );
 
-  const wrappedContent = <Suspense fallback={fallback}>{content}</Suspense>;
+  const wrappedContent = (
+    <Suspense fallback={fallback}>{content as ReactNode}</Suspense>
+  );
 
   const errorKey = useGetErrorKey<T>(props);
 

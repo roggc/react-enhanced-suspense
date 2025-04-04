@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export function useTimeouts(timeouts: number[] = [], resource: any) {
+export function useTimeouts(timeouts: number[] = []) {
   const [currentStage, setCurrentStage] = useState(-1);
 
   useEffect(() => {
@@ -11,7 +11,7 @@ export function useTimeouts(timeouts: number[] = [], resource: any) {
     );
 
     return () => timers.forEach(clearTimeout);
-  }, [timeouts, resource]);
+  }, [timeouts]);
 
   return currentStage;
 }

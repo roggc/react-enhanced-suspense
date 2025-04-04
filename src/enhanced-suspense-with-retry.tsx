@@ -10,12 +10,12 @@ import {
   useTimeouts,
 } from "./hooks/index.js";
 import type {
-  EnhancedSuspenseWithRetryProps,
+  EnhancedSuspenseWithRetryClientProps,
   RetryProps,
 } from "./types/types.js";
 
 const EnhancedSuspenseWithRetry = <T,>(
-  props: EnhancedSuspenseWithRetryProps<T>
+  props: EnhancedSuspenseWithRetryClientProps<T>
 ) => {
   const {
     fallback,
@@ -24,6 +24,10 @@ const EnhancedSuspenseWithRetry = <T,>(
     onError,
     timeouts = [],
     timeoutFallbacks = [],
+    cacheKey,
+    cacheTTL,
+    cacheVersion,
+    cachePersist,
     ...retryProps
   } = props;
   const { retry, retryCount, retryDelay, backoff, onRetryFallback } =
@@ -31,7 +35,9 @@ const EnhancedSuspenseWithRetry = <T,>(
 
   const normalizedResource = useMemo(
     () =>
-      retry ? (resource as () => Promise<T>) : () => resource as Promise<T>,
+      retry
+        ? (resource as () => Promise<T>)
+        : () => resource as unknown as Promise<T>,
     [retry, resource]
   );
 
@@ -40,10 +46,14 @@ const EnhancedSuspenseWithRetry = <T,>(
     retry,
     retryCount,
     retryDelay,
-    backoff
+    backoff,
+    cacheKey,
+    cacheTTL,
+    cacheVersion,
+    cachePersist
   );
 
-  const currentStage = useTimeouts(timeouts, enhancedResource ?? resource);
+  const currentStage = useTimeouts(timeouts);
 
   const content = onSuccess ? (
     retry ? (
@@ -64,7 +74,7 @@ const EnhancedSuspenseWithRetry = <T,>(
   ) : retry ? (
     (enhancedResource as ReactNode)
   ) : (
-    (resource as ReactNode)
+    (resource as unknown as ReactNode)
   );
 
   const loadingContent =
