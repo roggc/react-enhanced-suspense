@@ -1,7 +1,7 @@
 {
   "name": "react-enhanced-suspense",
   "version": "2.2.2",
-  "description": "A React 19 component that enhances Suspense with promise handling",
+  "description": "A React 19 component that enhances React's Suspense with optional features like promise resolution handling, error handling, caching, and more.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
@@ -12,11 +12,10 @@
   "keywords": [
     "react",
     "suspense",
-    "react-19",
     "promise",
-    "error-boundary"
+    "caching"
   ],
-  "author": "roger gomez castells (roggc)",
+  "author": "Roger Gomez Castells (roggc)",
   "license": "MIT",
   "peerDependencies": {
     "react": "^19.0.0"
