@@ -2,6 +2,25 @@
 
 A React 19 component that enhances React's `Suspense` with optional features like promise resolved values handling (`onSuccess`), error handling (`onError`), retry functionality of failing promises (`retry`), caching (`cacheKey`), and timeout fallbacks (`timeouts`).
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Key Features](#key-features)
+- [Promise Resolution Handling With `onSuccess`](#promise-resolution-handling-with-onsuccess)
+  - [React `Context` Example](#react-context-example)
+- [Error Handling With `onError` (\*Client Only)](#error-handling-with-onerror-client-only)
+- [Retry Functionality With `retry` (\*Client Only)](#retry-functionality-with-retry-client-only)
+- [Caching With `cacheKey` (\*Client Only)](#caching-with-cachekey-client-only)
+- [Timeout Fallbacks With `timeouts` And `timeoutFallbacks`](#timeout-fallbacks-with-timeouts-and-timeoutfallbacks)
+- [Invalid Props In The Server](#invalid-props-in-the-server)
+  - [Quick Reference Table](#quick-reference-table)
+  - [Examples](#examples)
+  - [`productionPropsErrorFallback`](#productionpropserrorfallback)
+- [Props](#props)
+- [Requirements](#requirements)
+- [License](#license)
+
 ## Installation
 
 To install the package, run:
@@ -255,7 +274,7 @@ export default function Timeouts() {
         timeoutFallbacks={[
           "Still working...",
           "Taking longer...",
-          <div style={color:"green"}>Almost there...</div>,
+          <div style={{ color: "green" }}>Almost there...</div>,
         ]}
       >
         {
