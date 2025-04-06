@@ -61,7 +61,9 @@ This component can be used as a substitute for React's `Suspense`.
 
 - **Timeout Fallbacks**: Update the fallback UI dynamically with `timeouts` and `timeoutFallbacks` for long-running operations.
 
-- **React's `Suspense`**: This component it's React's `Suspense` when only `fallback` or `children` props are used.
+- **React's `Suspense`**: This component is React's `Suspense` when only `fallback` or `children` props are used.
+
+- **TypeScript Support**: Fixes TypeScript errors when using React `Context` with `Suspense`, unlike React’s native `Suspense`.
 
 **(\*)**: These props can only be used in the **Client**.
 
@@ -125,7 +127,7 @@ export default function Context() {
 }
 ```
 
-if you don't need to transform the resolved value of the React's `Context`. This also works in React's `Suspense`, but it gives a Typescript error. In `EnhancedSuspense` this Typescript error is fixed.
+if you don't need to transform the resolved value of the React `Context` (**the same applies for promises**). This also works in React's `Suspense`, but it gives a Typescript error (in the case of React `Context`). In `EnhancedSuspense` this Typescript error is fixed.
 
 ## Error Handling With `onError` (\*Client Only)
 
@@ -450,11 +452,10 @@ All props are optional:
 
 - **`onError`**: A function that takes an `Error` and returns a `ReactNode`. **Only use it in the Client**.
 
-- **`children`**: Any `ReactNode` (same as React’s `Suspense`). Must be:
+- **`children`**: Any `ReactNode` (same as React’s `Suspense`). Specifies the resource or content to suspense. Requirements:
 
-  - A `Usable<T>` (e.g., `Promise<T>` or `Context<T>`) when `onSuccess` is provided and no `retry` or `cacheKey` are used.
-
-  - A function `() => Promise<T>` when `retry` or `cacheKey` (or both) are used.
+  - Use a `Usable<T>` (e.g., `Promise<T>` or React Context) when `onSuccess` is provided without `retry` or `cacheKey`. Works in Server or Client.
+  - Use a function `() => Promise<T>` when `retry` or `cacheKey` is enabled. Client-only.
 
 - **`fallback`**: Any `ReactNode` (same as React’s `Suspense`).
 
@@ -476,13 +477,15 @@ All props are optional:
 
 - **`cachePersist`**: A boolean. When `true` it persists the cached value into `localStorage`. Only applies when `cacheKey` is used.
 
-- **`timeouts`**: An array of numbers. Timeouts in milliseconds to update fallback UI shown. Only applies when `onRetryFallback` is not used.
+- **`timeouts`**: An array of numbers. Timeouts in milliseconds to update fallback UI shown. Only applies when `onRetryFallback` is not used (retry fallbacks take precedence).
 
-- **`timeoutFallbacks`**: An array of React Nodes (`ReactNode []`). Fallback UI's to show after each timeout specified in `timeouts`. Only applies when `timeouts` is not an empty array.
+- **`timeoutFallbacks`**: An array of React Nodes (`ReactNode[]`). Fallback UIs to show after each timeout specified in `timeouts`. Only applies when `timeouts` is not an empty array and `onRetryFallback` is not used.
+
+- **`productionPropsErrorFallback`**: A `ReactNode`. Renders a custom fallback in production when invalid props (e.g., `retry`, `cacheKey`, `onError`, or `timeouts` with `onSuccess`) are used in the Server. Defaults to `null` (renders nothing) if not provided. See [Invalid Props In The Server](#invalid-props-in-the-server) for details.
 
 Refer to [React documentation](https://react.dev/reference/react/Suspense#props) for `children` and `fallback` props.
 
-All props can be used together in the Client. In the Server **forbidden** props are `retry`, `cacheKey`, `onError`, and `timeouts` + `onSuccess` combination.
+All props can be used together in the **Client**. In the **Server**, **forbidden** props are `retry`, `cacheKey`, `onError`, and `timeouts` + `onSuccess` combination.
 
 ## Requirements
 
