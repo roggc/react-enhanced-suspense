@@ -1,36 +1,59 @@
 import type { EnhancedSuspenseProps } from "./types/types.js";
-import EnhancedSuspenseWithRetry from "./enhanced-suspense-with-retry.js";
-import EnhancedSuspenseWithoutRetry from "./enhanced-suspense-without-retry.js";
-import EnhancedSuspenseWithoutRetryClient from "./enhanced-suspense-without-retry-client.js";
+import ESWhenRetry from "./e-s-when-retry.js";
+import ESWhenOnError from "./e-s-when-on-error.js";
+import ESWhenCacheOrTimeouts from "./e-s-when-cache-or-timeouts.js";
+import ESServerComponent from "./e-s-server-component.js";
+import type { ReactNode } from "react";
+
+const ErrorMessage = ({ children }: { children: ReactNode }) => (
+  <div
+    style={{
+      color: "#ff0000",
+      padding: "1rem",
+      border: "2px solid #ff0000",
+      backgroundColor: "#fff0f0",
+      borderRadius: "4px",
+      fontFamily: "monospace",
+    }}
+  >
+    {children}
+  </div>
+);
 
 /**
- * Enhances React's `Suspense` with optional resource resolved values handling, error handling, retry functionality, and caching.
+ * Enhances React's `Suspense` with optional resource resolved values handling, error handling, retry functionality, caching, and timeout fallbacks.
  *
  * Matches React's `Suspense` when no enhancements are used.
  *
  * With `onSuccess`, restricts `children` to a `Usable` resource (e.g., `Promise` or `Context`, resolved via `use`) and transforms the value.
  *
- * With `onError`, wraps React's `Suspense` in an `ErrorBoundary` for custom error rendering.
+ * With `onError`, wraps React's `Suspense` in an `ErrorBoundary` for custom error rendering. Only use it in Client Environment.
  *
- * With `retry` set to `true`, enables retry logic for failed promises, turning the component into a Client Component;
+ * With `retry` set to `true`, enables retry functionality for failed promises. Only use it in Client Environment.
  *
- * @template T - The type of the resolved value from the resource (promise or React Context).
+ * With `cacheKey`, enables caching of the promise result. Only use it in Client Environment.
+ *
+ * With `timeouts`, enables timeout fallbacks for the resource.
+ *
+ * The combination of `timeouts` and `onSuccess` is not allowed in the Server Environment.
+ *
+ * @template T - The type of the resolved value from the resource (promise or React Context; `children` prop).
  * @param {EnhancedSuspenseProps<T>} props - The component props.
  * @param {ReactNode} [props.fallback] - Fallback UI shown while a resource is pending (same as React's `Suspense`).
  * @param {Usable<T> | (() => Promise<T>) | ReactNode} [props.children] - The resource or content to render.
- *   - Any `ReactNode` (same as React's `Suspense`) if `onSuccess` is not provided and `retry` is `false` or omitted.
- *   - A `Usable<T>` (e.g., `Promise<T>` or `Context<T>`) if `onSuccess` is provided and `retry` is `false` or omitted.
- *   - A function `() => Promise<T>` if `retry` is `true`.
+ *   - Any `ReactNode` (same as React's `Suspense`) if `onSuccess`, `retry`, and `cacheKey` are not used.
+ *   - A `Usable<T>` (e.g., `Promise<T>` or `Context<T>`) if `onSuccess` is provided and `retry` and `cacheKey` are not used.
+ *   - A function `() => Promise<T>` if `retry` or `cacheKey` (or both) are used.
  * @param {(data: T) => ReactNode} [props.onSuccess] - Optional callback to transform the resolved value of a usable resource.
- * @param {(error: Error) => ReactNode} [props.onError] - Optional callback to render errors (rejected values of promises are normalized to Error instances).
- * @param {boolean} [props.retry] - Enables retry logic for failed promises when set to `true` (makes it a Client Component). Defaults to `false`.
+ * @param {(error: Error) => ReactNode} [props.onError] - Optional callback to render errors (rejected values of promises are normalized to Error instances). Only use it in Client Environment.
+ * @param {boolean} [props.retry] - Enables retry functionality for failed promises when set to `true`. Defaults to `false`. Only use it in Client Environment.
  * @param {number} [props.retryCount] - Number of retry attempts (default: `1`). Only applies when `retry` is `true`.
  * @param {number} [props.retryDelay] - Delay in milliseconds between retries (default: `0`). Only applies when `retry` is `true`.
  * @param {boolean} [props.backoff] - Enables exponential backoff for retries (default: `false`). Only applies when `retry` is `true`.
  * @param {(attempt: number) => ReactNode} [props.onRetryFallback] - Fallback UI shown on each retry attempt. Only applies when `retry` is `true`.
- * @param {number []} [props.timeouts] - Array of timeouts when to show timeout fallbacks (makes it a Client Component).
- * @param {ReactNode []} [props.timeoutFallbacks] - Fallbacks UI to show on each timeout specified in `timeouts`. Only applies when `timeouts` it's not an empty array.
- * @param {string} [props.cacheKey] - Unique key for caching the promise result (optional). Enables caching when provided.
+ * @param {number []} [props.timeouts] - Array of timeouts when to show timeout fallbacks.
+ * @param {ReactNode []} [props.timeoutFallbacks] - Fallbacks UI to show on each timeout specified in `timeouts`. Only applies when `timeouts` is used.
+ * @param {string} [props.cacheKey] - Unique key for caching the promise result (optional). Enables caching when provided. Only use it in Client Environment.
  * @param {number} [props.cacheTTL] - Time-to-live for the cached result in milliseconds (optional). Only applies when `cacheKey` is provided.
  * @param {number} [props.cacheVersion] - Version of the cache (optional). The cache is cleared immediately when this value changes compared to the previous version (e.g., 0 to 1, 1 to 0, or any different value). Only applies when `cacheKey` is provided.
  * @param {boolean} [props.cachePersist] - Enables persistence of the cache in `localStorage` when set to `true` (default: `false`). Only applies when `cacheKey` is provided. Allows the cached result to persist across page reloads or component unmounts, synchronizing with `localStorage` dynamically if changed.
@@ -39,9 +62,11 @@ import EnhancedSuspenseWithoutRetryClient from "./enhanced-suspense-without-retr
  * @see https://react.dev/reference/react/Suspense - React's Suspense documentation.
  * @example
  * ```tsx
+ * "use client";
+ *
  * import Suspense from "react-enhanced-suspense";
  *
- * export default function SayHello({ promise }: { promise: Promise<string[]> }) {
+ * export default function Component({ promise }: { promise: Promise<string[]> }) {
  *   return (
  *     <>
  *       <div>Hey</div>
@@ -58,29 +83,29 @@ import EnhancedSuspenseWithoutRetryClient from "./enhanced-suspense-without-retr
  *   );
  * }
  * ```
- * @example With retry functionality (Client Component)
+ * @example With `retry` functionality
  * ```tsx
  * "use client";
  *
  * import Suspense from "react-enhanced-suspense";
  * import { useState } from "react";
  *
- * export default function SayHelloRetry() {
- * const [retryKey, setRetryKey] = useState(0);
+ * export default function Retry() {
+ * const [key, setKey] = useState(0);
  *
  *   return (
  *     <>
  *       <div>Hey</div>
  *       <div>
  *         <Suspense
- *           key={retryKey}
+ *           key={key}
  *           fallback={<div>Loading...</div>}
  *           onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
  *           onError={(error) => (
  *             <div>
  *               <div>{error.message}</div>
- *               <button onClick={() => setRetryKey(k => k + 1)}>
- *                 Retry
+ *               <button onClick={() => setKey(k => k + 1)}>
+ *                 Remount
  *               </button>
  *             </div>
  *           )}
@@ -107,14 +132,14 @@ import EnhancedSuspenseWithoutRetryClient from "./enhanced-suspense-without-retr
  *   );
  * }
  * ```
- * @example With cacheKey (Client Component)
+ * @example With `cacheKey`
  * ```tsx
  * "use client";
  *
  * import Suspense from "react-enhanced-suspense";
  * import {useState} from "react";
  *
- * export default function SayHello({ promise }: { promise: Promise<string[]> }) {
+ * export default function Cache() {
  *   const [cacheVersion, setCacheVersion] = useState(0);
  *   const [cachePersist, setCachePersist] = useState(false);
  *
@@ -133,7 +158,11 @@ import EnhancedSuspenseWithoutRetryClient from "./enhanced-suspense-without-retr
  *           cacheVersion={cacheVersion}
  *           cachePersist={cachePersist}
  *         >
- *           {promise}
+ *           {() =>
+ *             new Promise<string[]>((resolve) => {
+ *               setTimeout(() => {resolve(["Roger", "Alex"]);}, 3000);
+ *             })
+ *           }
  *         </Suspense>
  *       </div>
  *     </>
@@ -142,13 +171,59 @@ import EnhancedSuspenseWithoutRetryClient from "./enhanced-suspense-without-retr
  * ```
  */
 const EnhancedSuspense = <T,>(props: EnhancedSuspenseProps<T>) => {
-  return props.retry ? (
-    <EnhancedSuspenseWithRetry {...props} />
-  ) : props.timeouts || props.cacheKey !== undefined ? (
-    <EnhancedSuspenseWithoutRetryClient {...props} />
-  ) : (
-    <EnhancedSuspenseWithoutRetry {...props} />
-  );
+  const isServer = typeof window === "undefined";
+
+  const {
+    retry,
+    cacheKey,
+    onError,
+    timeouts,
+    onSuccess,
+    productionPropsErrorFallback,
+  } = props;
+
+  const usingInvalidCombo =
+    isServer &&
+    (retry || cacheKey !== undefined || onError || (timeouts && onSuccess));
+
+  if (usingInvalidCombo) {
+    const errorLines = [];
+
+    if (retry)
+      errorLines.push("❌ 'retry' prop cannot be used in server environment.");
+    if (cacheKey)
+      errorLines.push(
+        "❌ 'cacheKey' prop cannot be used in server environment."
+      );
+    if (onError)
+      errorLines.push(
+        "❌ 'onError' prop cannot be used in server environment."
+      );
+    if (timeouts && onSuccess)
+      errorLines.push(
+        "❌ 'timeouts' prop and 'onSuccess' prop cannot be used together in server environment."
+      );
+
+    const errorMessage = [
+      "🚨⚠️ EnhancedSuspense - Invalid Props In Server Environment:",
+      ...errorLines,
+      "Solution: Add 'use client' directive or remove some props. ⚠️🚨",
+    ].join("\n");
+
+    console.error(errorMessage);
+
+    return process.env.NODE_ENV !== "production" ? (
+      <ErrorMessage>{errorMessage}</ErrorMessage>
+    ) : (
+      productionPropsErrorFallback ?? null
+    );
+  }
+
+  if (retry) return <ESWhenRetry {...props} />;
+  if (cacheKey !== undefined || timeouts)
+    return <ESWhenCacheOrTimeouts {...props} />;
+  if (onError) return <ESWhenOnError {...props} />;
+  return <ESServerComponent {...props} />;
 };
 
 export default EnhancedSuspense;

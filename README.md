@@ -1,6 +1,6 @@
 # react-enhanced-suspense
 
-A React 19 component that extends React's `Suspense` with optional powerful features like promise resolved values handling (`onSuccess`), error handling (`onError`), retry functionality of failing promises (`retry`), caching (`cacheKey`), and timeout fallbacks (`timeouts`).
+A React 19 component that enhances React's `Suspense` with optional features like promise resolved values handling (`onSuccess`), error handling (`onError`), retry functionality of failing promises (`retry`), caching (`cacheKey`), and timeout fallbacks (`timeouts`).
 
 ## Installation
 
@@ -28,7 +28,7 @@ You can import the component in two ways:
 
 Both are the same component under the hood. Pick the one that suits your project!
 
-This component can be used as a substitute for React's `Suspense` and adds enhanced features like promise resolution handling, error handling, retry logic, caching, and more.
+This component can be used as a substitute for React's `Suspense`.
 
 ## Key Features
 
@@ -42,71 +42,42 @@ This component can be used as a substitute for React's `Suspense` and adds enhan
 
 - **Timeout Fallbacks**: Update the fallback UI dynamically with `timeouts` and `timeoutFallbacks` for long-running operations.
 
-## Basic Example
-
-Replace React’s `Suspense` with `EnhancedSuspense`:
-
-```typescript
-import { use } from "react";
-import { EnhancedSuspense } from "react-enhanced-suspense";
-
-const Use = ({ promise }: { promise: Promise<string[]> | undefined }) => {
-  const data = use(promise);
-  return data.map((item) => <div key={item}>{item}</div>);
-};
-
-export default function SayHello({ promise }: { promise: Promise<string[]> }) {
-  return (
-    <>
-      <div>hey</div>
-      <div>
-        <EnhancedSuspense fallback="Loading...">
-          <Use promise={promise} />
-        </EnhancedSuspense>
-      </div>
-    </>
-  );
-}
-```
-
-When only `fallback` and `children` are used, `EnhancedSuspense` behaves exactly like React’s `Suspense`.
+- **React's `Suspense`**: This component it's React's `Suspense` when only `fallback` or `children` props are used.
 
 ## Promise Resolution Handling With `onSuccess`
 
 ```typescript
-import { EnhancedSuspense } from "react-enhanced-suspense";
+import Suspense from "react-enhanced-suspense";
 
-export default function SayHello({ promise }: { promise: Promise<string[]> }) {
+export default function OnSuccess({ promise }: { promise: Promise<string[]> }) {
   return (
     <>
       <div>hey</div>
       <div>
-        <EnhancedSuspense
+        <Suspense
           fallback="Loading..."
           onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
         >
           {promise}
-        </EnhancedSuspense>
+        </Suspense>
       </div>
     </>
   );
 }
 ```
 
-`onSuccess` leverages React’s `use` hook to resolve the promise and transform the result.
-
-## Error Handling With `onError`
-
-Handle errors with a custom UI using `onError`:
+## Error Handling With `onError` (Only In Client Environment)
 
 ```typescript
-import { EnhancedSuspense } from "react-enhanced-suspense";
+"use client";
 
-export default function Component() {
+import Suspense from "react-enhanced-suspense";
+
+export default function OnError() {
   return (
-    <EnhancedSuspense onError={(error) => <div>{error.message}</div>}>
+    <Suspense onError={(error) => <div>{error.message}</div>}>
       {Promise.reject("Failed")}
-    </EnhancedSuspense>
+    </Suspense>
   );
 }
 ```
@@ -115,73 +86,88 @@ The `onError` prop wraps React's `Suspense` in an `ErrorBoundary` component for 
 
 ## React Context Example
 
-`EnhancedSuspense` also supports React Context as a Usable resource:
+`EnhancedSuspense` also supports React `Context` as a `Usable` resource (`children`):
 
 ```typescript
 "use client";
 
-import { EnhancedSuspense } from "react-enhanced-suspense";
+import Suspense from "react-enhanced-suspense";
 import { createContext } from "react";
 
 const MyContext = createContext("Default value");
 
-export default function ShowContext() {
+export default function Context() {
   return (
-    <EnhancedSuspense onSuccess={(value) => <div>Context value: {value}</div>}>
+    <Suspense onSuccess={(value) => <div>Context value: {value}</div>}>
       {MyContext}
-    </EnhancedSuspense>
+    </Suspense>
   );
 }
 ```
 
 This renders `Context value: Default value` because React’s `use` accepts both promises and React Contexts.
 
-## Retry Logic (Client Component)
-
-Retry failed promises with configurable options:
+You can also do:
 
 ```typescript
 "use client";
 
-import { EnhancedSuspense } from "react-enhanced-suspense";
+import Suspense from "react-enhanced-suspense";
+import { createContext } from "react";
+
+const MyContext = createContext("Default value");
+
+export default function Context() {
+  return <Suspense>{MyContext}</Suspense>;
+}
+```
+
+if you don't need to transform the resolved value of the React's `Context`. This is also works in React's `Suspense`, but it gives a Typescript error. In `EnhancedSuspense` this Typescript error is fixed.
+
+## Retry Functionality (Only In Client Environment)
+
+With `EnhancedSuspense` you can retry failed promises with configurable options:
+
+```typescript
+"use client";
+
+import Suspense from "react-enhanced-suspense";
 import { useState } from "react";
 
-export default function SayHello() {
+export default function Retry() {
   const [key, setKey] = useState(0);
 
   return (
     <>
-      <div>hey</div>
-      <div>
-        <EnhancedSuspense
-          key={key}
-          retry
-          retryCount={10}
-          retryDelay={500}
-          backoff
-          onRetryFallback={(attempt) => <div>{`Retrying ${attempt}...`}</div>}
-          onError={(error) => (
-            <div>
-              <div>{error.message}</div>
-              <button onClick={() => setKey((k) => k + 1)}>Remount</button>
-            </div>
-          )}
-          onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
-        >
-          {() =>
-            new Promise<string[]>((resolve, reject) => {
-              setTimeout(() => {
-                if (Math.random() > 0.7) {
-                  resolve(["Roger", "Alex"]);
-                } else {
-                  reject("Fail on data fetching");
-                }
-              }, 1000);
-            })
-          }
-          {/* Must be a function returning a promise when retry is true */}
-        </EnhancedSuspense>
-      </div>
+      <div>Hey</div>
+      <Suspense
+        key={key}
+        retry
+        retryCount={10}
+        retryDelay={500}
+        backoff
+        onRetryFallback={(attempt) => <div>{`Retrying ${attempt}...`}</div>}
+        onError={(error) => (
+          <div>
+            <div>{error.message}</div>
+            <button onClick={() => setKey((k) => k + 1)}>Remount</button>
+          </div>
+        )}
+        onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
+      >
+        {() =>
+          new Promise<string[]>((resolve, reject) => {
+            setTimeout(() => {
+              if (Math.random() > 0.7) {
+                resolve(["Roger", "Alex"]);
+              } else {
+                reject("Fail on data fetching");
+              }
+            }, 1000);
+          })
+        }
+        {/* 'children' must be a function returning a promise when 'retry' is true */}
+      </Suspense>
     </>
   );
 }
@@ -189,7 +175,7 @@ export default function SayHello() {
 
 - **Note**: When `retry` is `true`, `children` must be a function returning a promise (`() => Promise<T>`).
 
-## Caching (Cient Component)
+## Caching (Only In Client Environment)
 
 Cache promise results with `cacheKey`:
 
@@ -208,20 +194,17 @@ export default function Cache() {
     <>
       <button onClick={() => setKey((k) => k + 1)}>Remount</button>
       <button onClick={() => setCacheVersion((cchV) => cchV + 1)}>
-        increase cache version
-      </button>
-      <button onClick={() => setCacheVersion((cchV) => cchV - 1)}>
-        decrease cache version
+        Change cacheVersion
       </button>
       <button onClick={() => setCachePersist((cchP) => !cchP)}>
-        toggle persist cache
+        Toggle cachePersist
       </button>
       <Suspense
-        cacheKey="my-cache"
-        cacheTTL={60000}
-        cacheVersion={cacheVersion}
-        cachePersist={cachePersist}
         key={key}
+        cacheKey="my-cache-key"
+        cacheTTL={60000} // expiration time in ms for the cache
+        cacheVersion={cacheVersion} // when this changes, invalidates cache
+        cachePersist={cachePersist} // whether to persist cache in localStorage
         fallback="Loading..."
         onError={(error) => <div>{error.message}</div>}
         onSuccess={(data) => data.map((item) => <div key={item}>{item}</div>)}
@@ -237,6 +220,7 @@ export default function Cache() {
             }, 1000);
           })
         }
+        {/* 'children' must be a function returning a promise when 'cacheKey' is used */}
       </Suspense>
     </>
   );
@@ -251,19 +235,17 @@ export default function Cache() {
 
 - **Note**: When `cacheKey` is used, `children` must be a function returning a promise (`() => Promise<T>`).
 
-## Timeout Fallbacks (Client Component)
+## Timeout Fallbacks
 
 Update fallback UI for long-running operations:
 
 ```typescript
-"use client";
-
 import Suspense from "react-enhanced-suspense";
 import { useState } from "react";
 
 const VERY_LONG_TIME = 15000;
 
-export default function Timeouts({}) {
+export default function Timeouts() {
   const [key, setKey] = useState(0);
 
   return (
@@ -289,13 +271,143 @@ export default function Timeouts({}) {
 }
 ```
 
+## Invalid Combination Of Props When Used In Server Environment
+
+`EnhancedSuspense`, when used in Server environment, **cannot have** this props:
+
+- **`retry`**
+
+- **`cacheKey`**
+
+- **`onError`**
+
+- **`timeouts`+`onSuccess`**
+
+The reason is because functions cannot be serialized and passed to the Client. If you use any of this props in Server Environment, `EnhancedSuspense` will not `throw` an `Error`. Instead, it will render a message in development informing about the bad combination of props and how to fix it. In production, it will render nothing or `productionPropsErrorFallback` if provided.
+
+Examples of valid and invalid uses of `EnhancedSuspense` in **Server Environment** are:
+
+```typescript
+import Suspense from "react-enhanced-suspense";
+
+export default function InServer() {
+  const promise = new Promise<string>((resolve) =>
+    setTimeout(() => resolve("Hello From Server"), 15000)
+  );
+
+  return (
+    <>
+      {/* fallback + children: ✅ React's Suspense */}
+      <Suspense fallback="Loading...">{promise}</Suspense>
+      {/* onSuccess: ✅ React Server Component */}
+      <Suspense fallback="Loading..." onSuccess={(data) => <div>{data}</div>}>
+        {promise}
+      </Suspense>
+      {/* timeouts: ✅ React Client Component */}
+      <Suspense
+        fallback="Loading"
+        timeouts={[3000, 6000, 10000]}
+        timeoutFallbacks={[
+          <div>Timeout 1</div>,
+          <div>Timeout 2</div>,
+          <div>Timeout 3</div>,
+        ]}
+      >
+        {promise}
+      </Suspense>
+      {/* timeouts + onSuccess: ❌ BAD (React Client Component + Function) */}
+      <Suspense
+        fallback="Loading"
+        timeouts={[3000, 6000, 10000]}
+        timeoutFallbacks={[
+          <div>Timeout 1</div>,
+          <div>Timeout 2</div>,
+          <div>Timeout 3</div>,
+        ]}
+        onSuccess={(data) => <div>{data}</div>}
+      >
+        {promise}
+      </Suspense>
+      {/* retry: ❌ BAD (React Client Component + Function) */}
+      <Suspense retry>{() => promise}</Suspense>
+      {/* cacheKey: ❌ BAD (React Client Component + Function) */}
+      <Suspense cacheKey="my-cache-key">{() => promise}</Suspense>
+      {/* onError: ❌ BAD (React Client Component + Function) */}
+      <Suspense onError={(error) => <div>{error.message}</div>}>
+        {promise}
+      </Suspense>
+    </>
+  );
+}
+```
+
+If you want to render a fallback in production in case of bad combination of props in Server Environment you can use `productionPropsErrorFallback`:
+
+```typescript
+import Suspense from "../lib";
+
+const ProductionPropsErrorFallback = () => (
+  <div className="server-error">
+    Component unavailable - please contact support
+  </div>
+);
+
+export default function InServer() {
+  const promise = new Promise<string>((resolve) =>
+    setTimeout(() => resolve("Hello from server"), 15000)
+  );
+
+  return (
+    <>
+      {/* timeouts + onSuccess: ❌ BAD (React Client Component + Function) */}
+      <Suspense
+        fallback="Loading"
+        timeouts={[3000, 6000, 10000]}
+        timeoutFallbacks={[
+          <div>Timeout 1</div>,
+          <div>Timeout 2</div>,
+          <div>Timeout 3</div>,
+        ]}
+        onSuccess={(data) => <div>{data}</div>}
+        productionPropsErrorFallback={<ProductionPropsErrorFallback />}
+      >
+        {promise}
+      </Suspense>
+      {/* retry: ❌ BAD (React Client Component + Function) */}
+      <Suspense
+        retry
+        productionPropsErrorFallback={<ProductionPropsErrorFallback />}
+      >
+        {() => promise}
+      </Suspense>
+      {/* cacheKey: ❌ BAD (React Client Component + Function) */}
+      <Suspense
+        cacheKey="my-cache-key"
+        productionPropsErrorFallback={<ProductionPropsErrorFallback />}
+      >
+        {() => promise}
+      </Suspense>
+      {/* onError: ❌ BAD (React Client Component + Function) */}
+      <Suspense
+        onError={(error) => <div>{error.message}</div>}
+        productionPropsErrorFallback={<ProductionPropsErrorFallback />}
+      >
+        {promise}
+      </Suspense>
+    </>
+  );
+}
+```
+
+If not used `productionPropsErrorFallback` it will render nothing in production when a bad combination of props in Server Environment is detected.
+
 ## Props
 
 All props are optional:
 
 - **`onSuccess`**: A function that takes the resolved value of a resource (promise or React Context) and returns a `ReactNode`.
 
-- **`onError`**: A function that takes an `Error` and returns a `ReactNode`.
+- **`onError`**: A function that takes an `Error` and returns a `ReactNode`. **Only use it in Client Environment**.
 
 - **`children`**: Any `ReactNode` (same as React’s `Suspense`). Must be:
 
@@ -305,7 +417,7 @@ All props are optional:
 
 - **`fallback`**: Any `ReactNode` (same as React’s `Suspense`).
 
-- **`retry`**: Boolean. Set to `true` to enable retry logic (makes it a Client Component). Defaults to `false`.
+- **`retry`**: Boolean. Set to `true` to enable retry functionality. Defaults to `false`. **Only use it in Client Environment**.
 
 - **`retryCount`**: Number of retry attempts (default: `1`). Only applies when `retry` is `true`.
 
@@ -315,7 +427,7 @@ All props are optional:
 
 - **`onRetryFallback`**: A function `(attempt: number) => ReactNode`. Fallback UI to be shown on each retry attempt. Only applies when `retry` is `true`.
 
-- **`cacheKey`**: A string. Saves the resolved value of a promise into a memory cache (makes it a Client Component).
+- **`cacheKey`**: A string. Saves the resolved value of a promise into a memory cache. **Only use it in Client Environment**.
 
 - **`cacheTTL`**: A number. Sets an expiration time in milliseconds for the cached value. Only applies when `cacheKey` is used.
 
@@ -329,11 +441,11 @@ All props are optional:
 
 Refer to [React documentation](https://react.dev/reference/react/Suspense#props) for `children` and `fallback` props.
 
-All props can be used toguether.
+All props can be used together in Client Environment. In Server Environment **forbidden** props are `retry`, `cacheKey`, `onError`, and `timeouts` + `onSuccess` combination.
 
 ## Requirements
 
-- React 19+: Uses the `use` hook for promise/Context resolution.
+- React 19+: Uses the `use` hook when `onSuccess` prop is used.
 
 ## License
 

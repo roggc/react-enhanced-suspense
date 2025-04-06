@@ -4,12 +4,10 @@ import { Suspense, useMemo } from "react";
 import type { ReactNode, Usable } from "react";
 import ErrorBoundary from "./error-boundary.js";
 import Use from "./use.js";
-import type { EnhancedSuspenseNoRetryClientProps } from "./types/types.js";
+import type { ESWhenCacheOrTimeoutsProps } from "./types/types.js";
 import { useGetErrorKey, useTimeouts, useCache } from "./hooks/index.js";
 
-const EnhancedSuspenseWithoutRetryClient = <T,>(
-  props: EnhancedSuspenseNoRetryClientProps<T>
-) => {
+const ESWhenCacheOrTimeouts = <T,>(props: ESWhenCacheOrTimeoutsProps<T>) => {
   const {
     fallback,
     children: resource,
@@ -25,8 +23,7 @@ const EnhancedSuspenseWithoutRetryClient = <T,>(
 
   const currentStage = useTimeouts(timeouts);
   const normalizedResource = useMemo(
-    () =>
-      cacheKey ? (resource as () => Promise<T>) : () => resource as Promise<T>,
+    () => (cacheKey ? resource : () => resource as Promise<T>),
     [cacheKey, resource]
   );
   const enhancedResource = useCache(
@@ -45,7 +42,7 @@ const EnhancedSuspenseWithoutRetryClient = <T,>(
       enhancedResource={undefined}
     />
   ) : (
-    enhancedResource
+    (enhancedResource as ReactNode)
   );
 
   const loadingContent =
@@ -54,7 +51,7 @@ const EnhancedSuspenseWithoutRetryClient = <T,>(
       : fallback;
 
   const wrappedContent = (
-    <Suspense fallback={loadingContent}>{content as ReactNode}</Suspense>
+    <Suspense fallback={loadingContent}>{content}</Suspense>
   );
 
   const errorKey = useGetErrorKey<T>(props);
@@ -68,4 +65,4 @@ const EnhancedSuspenseWithoutRetryClient = <T,>(
   );
 };
 
-export default EnhancedSuspenseWithoutRetryClient;
+export default ESWhenCacheOrTimeouts;

@@ -10,7 +10,6 @@ import {
 /**
  * A hook to execute a promise with retry logic and optional caching.
  * @param resource - The promise-returning function to execute.
- * @param retry - Whether to enable retries (default: false).
  * @param retryCount - Number of retries (default: 1).
  * @param retryDelay - Base delay between retries in milliseconds (default: 0).
  * @param backoff - If true, applies exponential backoff (delay = retryDelay * 2^attempts); if false, uses fixed delay (default: false).
@@ -22,7 +21,6 @@ import {
  */
 export function useRetryablePromise<T>(
   resource: () => Promise<T>,
-  retry: boolean = false,
   retryCount: number = 1,
   retryDelay: number = 0,
   backoff: boolean = false,
@@ -102,13 +100,12 @@ export function useRetryablePromise<T>(
       promiseCache.clear();
     };
 
-    if (retry && !promiseCache.has(resource)) {
+    if (!promiseCache.has(resource)) {
       promiseCache.set(resource, executeWithRetry());
     }
   }, [
     isCancelled,
     timers,
-    retry,
     resource,
     retryCount,
     retryDelay,
@@ -130,7 +127,6 @@ export function useRetryablePromise<T>(
     resource,
     retryCount,
     retryDelay,
-    retry,
     backoff,
     cacheKey,
     cacheTTL,
@@ -151,12 +147,10 @@ export function useRetryablePromise<T>(
     previousCachePersistRef.current = cachePersist;
   }, [cacheKey, cachePersist]);
 
-  return retry
-    ? [
-        cachedResult !== undefined
-          ? Promise.resolve(cachedResult)
-          : promiseCache.get(resource),
-        attempt,
-      ]
-    : [undefined, attempt];
+  const enhancedResource =
+    cachedResult !== undefined
+      ? Promise.resolve(cachedResult)
+      : promiseCache.get(resource);
+
+  return [enhancedResource, attempt];
 }

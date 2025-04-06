@@ -7,11 +7,11 @@ export function useGetErrorKey<T>({
   fallback,
   ...props
 }: EnhancedSuspenseProps<T>) {
-  const keyRef = useRef?.(0);
+  const keyRef = useRef(0);
 
-  useEffect?.(() => {
+  useEffect(() => {
     keyRef.current += 1;
   }, [...Object.values(props)]);
 
-  return keyRef?.current;
+  return keyRef.current;
 }
