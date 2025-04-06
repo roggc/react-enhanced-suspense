@@ -34,15 +34,17 @@ This component can be used as a substitute for React's `Suspense`.
 
 - **Promise Resolution Handling**: Use `onSuccess` to transform resolved promise or React Context values.
 
-- **Error Handling**: Use `onError` to wrap React's `Suspense` in an `ErrorBoundary` for custom error rendering.
+- **(\*)Error Handling**: Use `onError` to wrap React's `Suspense` in an `ErrorBoundary` for custom error rendering **(Client only)**.
 
-- **Retry Logic**: Automatically retry failed promises with `retry`, configurable with `retryCount`, `retryDelay`, `backoff`, and `onRetryFallback`.
+- **(\*)Retry Functionality**: Automatically retry failed promises with `retry`, configurable with `retryCount`, `retryDelay`, `backoff`, and `onRetryFallback` **(Client only)**.
 
-- **Caching**: Store promise results in memory or `localStorage` with `cacheKey`, `cacheTTL`, `cacheVersion`, and `cachePersist`.
+- **(\*)Caching**: Store promise results in memory or `localStorage` with `cacheKey`, `cacheTTL`, `cacheVersion`, and `cachePersist` **(Client only)**.
 
 - **Timeout Fallbacks**: Update the fallback UI dynamically with `timeouts` and `timeoutFallbacks` for long-running operations.
 
 - **React's `Suspense`**: This component it's React's `Suspense` when only `fallback` or `children` props are used.
+
+**(\*)**: These props can only be used in the **Client**.
 
 ## Promise Resolution Handling With `onSuccess`
 
@@ -66,7 +68,7 @@ export default function OnSuccess({ promise }: { promise: Promise<string[]> }) {
 }
 ```
 
-## Error Handling With `onError` (Only In Client Environment)
+## Error Handling With `onError` (\*Client Only)
 
 ```typescript
 "use client";
@@ -124,7 +126,7 @@ export default function Context() {
 
 if you don't need to transform the resolved value of the React's `Context`. This is also works in React's `Suspense`, but it gives a Typescript error. In `EnhancedSuspense` this Typescript error is fixed.
 
-## Retry Functionality (Only In Client Environment)
+## Retry Functionality (\*Client Only)
 
 With `EnhancedSuspense` you can retry failed promises with configurable options:
 
@@ -175,7 +177,7 @@ export default function Retry() {
 
 - **Note**: When `retry` is `true`, `children` must be a function returning a promise (`() => Promise<T>`).
 
-## Caching (Only In Client Environment)
+## Caching (\*Client Only)
 
 Cache promise results with `cacheKey`:
 
@@ -271,9 +273,11 @@ export default function Timeouts() {
 }
 ```
 
-## Invalid Combination Of Props When Used In Server Environment
+## Invalid Props In The Server
 
-`EnhancedSuspense`, when used in Server environment, **cannot have** this props:
+`EnhancedSuspense` can be used in the **Server** and in the **Client**.
+
+When used in the **Server**, `EnhancedSuspense` **cannot have** this props:
 
 - **`retry`**
 
@@ -283,9 +287,29 @@ export default function Timeouts() {
 
 - **`timeouts`+`onSuccess`**
 
-The reason is because functions cannot be serialized and passed to the Client. If you use any of this props in Server Environment, `EnhancedSuspense` will not `throw` an `Error`. Instead, it will render a message in development informing about the bad combination of props and how to fix it. In production, it will render nothing or `productionPropsErrorFallback` if provided.
+The reason is because **functions cannot be serialized** and passed to the Client.
 
-Examples of valid and invalid uses of `EnhancedSuspense` in **Server Environment** are:
+If you use any of this props in the Server, `EnhancedSuspense` will not `throw` an `Error`. Instead, it will render a message in development informing about the bad props and how to fix it.
+
+In production, it will render nothing (`null`) or `productionPropsErrorFallback` if provided.
+
+### Quick Reference Table
+
+This table summarizes what props **cannot be used** in the **Server** and what props can:
+
+| Props                                     | Server Allowed | Reason                                        |
+| ----------------------------------------- | -------------- | --------------------------------------------- |
+| `retry`                                   | ❌             | Client Component + Requires Function Children |
+| `cacheKey`                                | ❌             | Client Component + Requires Function Children |
+| `onError`                                 | ❌             | Client Component + Function                   |
+| `timeouts` + `onSuccess`                  | ❌             | Client Component + Function                   |
+| `timeouts` [+ `fallback`] [+ `children`]  | ✅             | Client Component (No Functions)               |
+| `onSuccess` [+ `fallback`] [+ `children`] | ✅             | Server Component                              |
+| [+`fallback`] [+ `children`]              | ✅             | Server Component (React's `Suspense`)         |
+
+### Examples
+
+Examples of valid versus invalid props in the **Server** are:
 
 ```typescript
 import Suspense from "react-enhanced-suspense";
@@ -341,10 +365,12 @@ export default function InServer() {
 }
 ```
 
-If you want to render a fallback in production in case of bad combination of props in Server Environment you can use `productionPropsErrorFallback`:
+### `productionPropsErrorFallback`
+
+If you want to render a fallback in production in case of bad props in the Server you can use `productionPropsErrorFallback`:
 
 ```typescript
-import Suspense from "../lib";
+import Suspense from "react-enhanced-suspense";
 
 const ProductionPropsErrorFallback = () => (
   <div className="server-error">
@@ -399,7 +425,7 @@ export default function InServer() {
 }
 ```
 
-If not used `productionPropsErrorFallback` it will render nothing in production when a bad combination of props in Server Environment is detected.
+If not used, it will render nothing (`null`) in production when bad props are used in the Server.
 
 ## Props
 
