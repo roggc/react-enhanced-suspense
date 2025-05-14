@@ -1,19 +1,27 @@
 {
   "compilerOptions": {
-    "target": "esnext", // Compila a la última versión de ECMAScript
-    "module": "NodeNext", // Usa módulos ES con extensiones para Node.js
-    "jsx": "react-jsx", // Soporte para JSX en React 19
-    "declaration": true, // Genera archivos .d.ts para tipos
-    "outDir": "./dist", // Directorio de salida
-    "rootDir": "./src", // Directorio raíz de los fuentes
-    "strict": true, // Chequeos estrictos
-    "esModuleInterop": true, // Compatibilidad con módulos CommonJS
-    "skipLibCheck": true, // Omite chequeo de tipos en librerías
-    "moduleResolution": "NodeNext", // Consistente con module: "NodeNext"
-    "allowSyntheticDefaultImports": true, // Permite importaciones por defecto sintéticas
-    "noEmitOnError": true, // No emite si hay errores
-    "noEmit": false // Genera archivos .js
+    "target": "esnext",
+    "module": "esnext",
+    "jsx": "react-jsx",
+    "declaration": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "noEmitOnError": true,
+    "noEmit": false,
+    "types": ["@testing-library/jest-dom", "node"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/__tests__/**",
+    "jest-setup.ts"
+  ]
 }

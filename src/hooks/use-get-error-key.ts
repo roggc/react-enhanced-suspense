@@ -1,17 +1,46 @@
-import { useEffect, useRef } from "react";
-import { EnhancedSuspenseProps } from "../types/types.js";
+import { useEffect, useState } from "react";
+import { ESClientComponentProps } from "../types/types.js";
 
 export function useGetErrorKey<T>({
   onSuccess,
   onError,
   fallback,
-  ...props
-}: EnhancedSuspenseProps<T>) {
-  const keyRef = useRef(0);
+  timeouts = [],
+  timeoutFallbacks = [],
+  cache,
+  cacheTTL,
+  cacheVersion,
+  cachePersist,
+  retry,
+  retryCount,
+  retryDelay,
+  retryBackoff,
+  children: resource,
+  resourceId,
+  onRetryFallback,
+}: ESClientComponentProps<T>) {
+  const [key, setKey] = useState(0);
 
   useEffect(() => {
-    keyRef.current += 1;
-  }, [...Object.values(props)]);
+    setKey((k) => k + 1);
+  }, [
+    cache,
+    cacheTTL,
+    cacheVersion,
+    cachePersist,
+    retry,
+    retryCount,
+    retryDelay,
+    // retryBackoff,
+    resourceId,
+    // resource,
+    // timeouts,
+    // timeoutFallbacks,
+    // fallback,
+    // onSuccess,
+    // onError,
+    // onRetryFallback,
+  ]);
 
-  return keyRef.current;
+  return key;
 }

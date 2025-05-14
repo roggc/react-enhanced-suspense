@@ -7,12 +7,7 @@ const ESServerComponent = <T,>(props: ESServerComponentProps<T>) => {
   const { fallback, children: resource, onSuccess } = props;
 
   const content = onSuccess ? (
-    <Use
-      resource={resource}
-      onSuccess={onSuccess}
-      retry={false}
-      enhancedResource={undefined}
-    />
+    <Use onSuccess={onSuccess} resource={resource as Promise<T>} />
   ) : (
     resource
   );

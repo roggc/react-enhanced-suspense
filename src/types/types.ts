@@ -1,51 +1,36 @@
-import type { Usable, ReactNode, Context } from "react";
+import type { Usable, ReactNode } from "react";
 
 type TimeoutsProps = {
   timeouts?: number[] | undefined;
   timeoutFallbacks?: ReactNode[] | undefined;
 };
 
-type NeverTimeoutsProps = {
-  timeouts?: never;
-  timeoutFallbacks?: never;
-};
-
 type CacheProps = {
-  cacheKey?: string | undefined;
+  cache?: boolean | undefined;
   cacheTTL?: number | undefined;
   cacheVersion?: number | undefined;
   cachePersist?: boolean | undefined;
 };
 
-type NeverCacheProps = {
-  cacheKey?: never;
-  cacheTTL?: never;
-  cacheVersion?: never;
-  cachePersist?: never;
-};
+export type BackoffStrategy =
+  | "exponential"
+  | "linear"
+  | ((attempt: number, retryDelay: number) => number);
 
 type RetryProps = {
   retry?: boolean | undefined;
   retryCount?: number | undefined;
   retryDelay?: number | undefined;
-  backoff?: boolean | undefined;
+  retryBackoff?:
+    | "exponential"
+    | "linear"
+    | ((attempt: number, retryDelay: number) => number)
+    | undefined;
   onRetryFallback?: ((attempt: number) => ReactNode) | undefined;
-};
-
-type NeverRetryProps = {
-  retry?: never;
-  retryCount?: never;
-  retryDelay?: never;
-  backoff?: never;
-  onRetryFallback?: never;
 };
 
 type OnErrorProps = {
   onError?: ((error: Error) => ReactNode) | undefined;
-};
-
-type NeverOnErrorProps = {
-  onError?: never;
 };
 
 type ChildrenWhenOnSuccessProps<T> = {
@@ -54,106 +39,147 @@ type ChildrenWhenOnSuccessProps<T> = {
 };
 
 type ChildrenNoOnSuccessProps = {
-  children?: ReactNode | Context<any> | undefined;
+  children?: ReactNode | Usable<ReactNode> | undefined;
   onSuccess?: never;
 };
 
 type ESBaseProps = {
   fallback?: ReactNode | undefined;
   productionPropsErrorFallback?: ReactNode | undefined;
+  resourceId?: string | undefined;
 };
 
-type ESWhenOnSuccessProps<T> = ESBaseProps &
-  NeverCacheProps &
-  NeverRetryProps &
-  NeverOnErrorProps &
-  NeverTimeoutsProps &
-  ChildrenWhenOnSuccessProps<T>;
+type ESServerComponentWithOnSuccessProps<T> = ESBaseProps &
+  CacheProps &
+  RetryProps &
+  OnErrorProps &
+  TimeoutsProps &
+  ChildrenWhenOnSuccessProps<T> & {
+    cache?: false | undefined;
+    retry?: false | undefined;
+    onError?: undefined;
+    timeouts?: undefined;
+    resourceId?: undefined;
+  };
 
-type ESNoOnSuccessProps = ESBaseProps &
-  NeverCacheProps &
-  NeverRetryProps &
-  NeverOnErrorProps &
-  NeverTimeoutsProps &
-  ChildrenNoOnSuccessProps;
+type ESServerComponentNoOnSuccessProps = ESBaseProps &
+  CacheProps &
+  RetryProps &
+  OnErrorProps &
+  TimeoutsProps &
+  ChildrenNoOnSuccessProps & {
+    cache?: false | undefined;
+    retry?: false | undefined;
+    onError?: undefined;
+    timeouts?: undefined;
+    resourceId?: undefined;
+  };
 
 export type ESServerComponentProps<T> =
-  | ESNoOnSuccessProps
-  | ESWhenOnSuccessProps<T>;
+  | ESServerComponentNoOnSuccessProps
+  | ESServerComponentWithOnSuccessProps<T>;
 
-export type ESWhenRetryProps<T> = ESBaseProps &
+type ESWhenRetryProps<T> = ESBaseProps &
   RetryProps &
   CacheProps &
   TimeoutsProps &
   OnErrorProps & {
+    cache?: false | undefined;
     retry: true;
     children: () => Promise<T>;
     onSuccess?: ((data: T) => ReactNode) | undefined;
   };
 
 type ESWhenCacheProps<T> = ESBaseProps &
-  NeverRetryProps &
   CacheProps &
-  OnErrorProps &
-  TimeoutsProps & {
-    cacheKey: string;
+  RetryProps &
+  TimeoutsProps &
+  OnErrorProps & {
+    retry?: false | undefined;
+    cache: true;
+    resourceId: string;
+    children: () => Promise<T>;
+    onSuccess?: ((data: T) => ReactNode) | undefined;
+  };
+
+type ESWhenRetryAndCacheProps<T> = ESBaseProps &
+  RetryProps &
+  CacheProps &
+  TimeoutsProps &
+  OnErrorProps & {
+    cache: true;
+    resourceId: string;
+    retry: true;
     children: () => Promise<T>;
     onSuccess?: ((data: T) => ReactNode) | undefined;
   };
 
 type ESWhenTimeoutsNoOnSuccessProps = ESBaseProps &
-  NeverRetryProps &
-  NeverCacheProps &
+  RetryProps &
+  CacheProps &
   OnErrorProps &
   TimeoutsProps &
-  ChildrenNoOnSuccessProps & { timeouts: number[] };
+  ChildrenNoOnSuccessProps & {
+    retry?: false | undefined;
+    cache?: false | undefined;
+    timeouts: number[];
+  };
 
 type ESWhenTimeoutsWhenOnSuccessProps<T> = ESBaseProps &
-  NeverRetryProps &
-  NeverCacheProps &
+  RetryProps &
+  CacheProps &
   OnErrorProps &
   TimeoutsProps &
-  ChildrenWhenOnSuccessProps<T> & { timeouts: number[] };
+  ChildrenWhenOnSuccessProps<T> & {
+    timeouts: number[];
+    retry?: false | undefined;
+    cache?: false | undefined;
+  };
 
-export type ESWhenCacheOrTimeoutsProps<T> =
+type ESWhenTimeoutsProps<T> =
   | ESWhenTimeoutsNoOnSuccessProps
-  | ESWhenTimeoutsWhenOnSuccessProps<T>
-  | ESWhenCacheProps<T>;
+  | ESWhenTimeoutsWhenOnSuccessProps<T>;
 
 type ESWhenOnErrorWhenOnSuccessProps<T> = ESBaseProps &
-  NeverRetryProps &
-  NeverCacheProps &
-  NeverTimeoutsProps &
+  RetryProps &
+  CacheProps &
+  TimeoutsProps &
   OnErrorProps &
-  ChildrenWhenOnSuccessProps<T> & { onError: (error: Error) => ReactNode };
+  ChildrenWhenOnSuccessProps<T> & {
+    timeouts?: undefined;
+    onError: (error: Error) => ReactNode;
+    retry?: false | undefined;
+    cache?: false | undefined;
+  };
 
 type ESWhenOnErrorNoOnSuccessProps = ESBaseProps &
-  NeverRetryProps &
-  NeverCacheProps &
-  NeverTimeoutsProps &
+  RetryProps &
+  CacheProps &
+  TimeoutsProps &
   OnErrorProps &
-  ChildrenNoOnSuccessProps & { onError: (error: Error) => ReactNode };
+  ChildrenNoOnSuccessProps & {
+    timeouts?: undefined;
+    onError: (error: Error) => ReactNode;
+    retry?: false | undefined;
+    cache?: false | undefined;
+  };
 
-export type ESWhenOnErrorProps<T> =
+type ESWhenOnErrorProps<T> =
   | ESWhenOnErrorWhenOnSuccessProps<T>
   | ESWhenOnErrorNoOnSuccessProps;
 
-export type EnhancedSuspenseProps<T> =
+export type ESClientComponentProps<T> =
+  | ESWhenCacheProps<T>
   | ESWhenRetryProps<T>
-  | ESWhenCacheOrTimeoutsProps<T>
-  | ESWhenOnErrorProps<T>
-  | ESServerComponentProps<T>;
+  | ESWhenRetryAndCacheProps<T>
+  | ESWhenTimeoutsProps<T>
+  | ESWhenOnErrorProps<T>;
 
-export type UseProps<T> =
-  | {
-      retry: true;
-      resource: () => Promise<T>;
-      onSuccess: (data: T) => ReactNode;
-      enhancedResource: Promise<T>;
-    }
-  | {
-      retry?: false | undefined;
-      resource: Usable<T>;
-      onSuccess: (data: T) => ReactNode;
-      enhancedResource: undefined;
-    };
+export type EnhancedSuspenseProps<T> =
+  | ESServerComponentProps<T>
+  | ESClientComponentProps<T>;
+
+export type UseProps<T> = {
+  onSuccess: (data: T) => ReactNode;
+  resource: Promise<T>;
+};

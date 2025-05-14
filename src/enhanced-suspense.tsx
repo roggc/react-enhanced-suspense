@@ -1,8 +1,6 @@
 import type { EnhancedSuspenseProps } from "./types/types.js";
-import ESWhenRetry from "./e-s-when-retry.js";
-import ESWhenOnError from "./e-s-when-on-error.js";
-import ESWhenCacheOrTimeouts from "./e-s-when-cache-or-timeouts.js";
 import ESServerComponent from "./e-s-server-component.js";
+import ESClientComponent from "./e-s-client-component.js";
 import type { ReactNode } from "react";
 
 const ErrorMessage = ({ children }: { children: ReactNode }) => (
@@ -49,7 +47,7 @@ const ErrorMessage = ({ children }: { children: ReactNode }) => (
  * @param {boolean} [props.retry] - Enables retry functionality for failed promises when set to `true`. Defaults to `false`. Only use it in Client Environment.
  * @param {number} [props.retryCount] - Number of retry attempts (default: `1`). Only applies when `retry` is `true`.
  * @param {number} [props.retryDelay] - Delay in milliseconds between retries (default: `0`). Only applies when `retry` is `true`.
- * @param {boolean} [props.backoff] - Enables exponential backoff for retries (default: `false`). Only applies when `retry` is `true`.
+ * @param {boolean} [props.retryBackoff] - Applies a backoff strategy between retries. Can be `"linear"`, `"exponential"` or a function. If a function, the first parameter it's the attempt index (starting at zero) and the second parameter it's the `retryDelay`; the returned value must be a number (`(attempt: number, retrayDelay: number) => number`). Only applies when `retry` is `true`.
  * @param {(attempt: number) => ReactNode} [props.onRetryFallback] - Fallback UI shown on each retry attempt. Only applies when `retry` is `true`.
  * @param {number []} [props.timeouts] - Array of timeouts when to show timeout fallbacks.
  * @param {ReactNode []} [props.timeoutFallbacks] - Fallbacks UI to show on each timeout specified in `timeouts`. Only applies when `timeouts` is used.
@@ -175,7 +173,7 @@ const EnhancedSuspense = <T,>(props: EnhancedSuspenseProps<T>) => {
 
   const {
     retry,
-    cacheKey,
+    cache,
     onError,
     timeouts,
     onSuccess,
@@ -183,15 +181,14 @@ const EnhancedSuspense = <T,>(props: EnhancedSuspenseProps<T>) => {
   } = props;
 
   const usingInvalidCombo =
-    isServer &&
-    (retry || cacheKey !== undefined || onError || (timeouts && onSuccess));
+    isServer && (retry || cache || onError || (timeouts && onSuccess));
 
   if (usingInvalidCombo) {
     const errorLines = [];
 
     if (retry)
       errorLines.push("❌ 'retry' prop cannot be used in server environment.");
-    if (cacheKey)
+    if (cache)
       errorLines.push(
         "❌ 'cacheKey' prop cannot be used in server environment."
       );
@@ -219,10 +216,8 @@ const EnhancedSuspense = <T,>(props: EnhancedSuspenseProps<T>) => {
     );
   }
 
-  if (retry) return <ESWhenRetry {...props} />;
-  if (cacheKey !== undefined || timeouts)
-    return <ESWhenCacheOrTimeouts {...props} />;
-  if (onError) return <ESWhenOnError {...props} />;
+  if (cache || retry || timeouts || onError)
+    return <ESClientComponent {...props} />;
   return <ESServerComponent {...props} />;
 };
 

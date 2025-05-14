@@ -1,54 +1,56 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import type { ReactNode } from "react";
 import ErrorBoundary from "./error-boundary.js";
 import Use from "./use.js";
-import {
-  useGetErrorKey,
-  useRetryablePromise,
-  useTimeouts,
-} from "./hooks/index.js";
-import type { ESWhenRetryProps } from "./types/types.js";
+import { useGetErrorKey, usePromise, useTimeouts } from "./hooks/index.js";
+import type { ESClientComponentProps } from "./types/types.js";
 
-const EnhancedSuspenseWhenRetry = <T,>(props: ESWhenRetryProps<T>) => {
+const ESClientComponent = <T,>(props: ESClientComponentProps<T>) => {
   const {
     fallback,
     children: resource,
+    resourceId,
     onSuccess,
     onError,
     timeouts = [],
     timeoutFallbacks = [],
-    cacheKey,
+    cache,
     cacheTTL,
     cacheVersion,
     cachePersist,
-    ...rest
-  } = props;
-  const { retryCount, retryDelay, backoff, onRetryFallback } = rest;
-
-  const [enhancedResource, attempt] = useRetryablePromise(
-    resource,
+    retry,
     retryCount,
     retryDelay,
-    backoff,
-    cacheKey,
+    retryBackoff,
+    onRetryFallback,
+  } = props;
+
+  const normalizedResource = useMemo(
+    () => (cache || retry ? resource : () => resource as Promise<T>),
+    [cache, retry, resource]
+  );
+
+  const [promise, attempt] = usePromise(
+    normalizedResource,
+    retry,
+    retryCount,
+    retryDelay,
+    retryBackoff,
+    cache,
     cacheTTL,
     cacheVersion,
-    cachePersist
+    cachePersist,
+    resourceId
   );
 
   const currentStage = useTimeouts(timeouts);
 
   const content = onSuccess ? (
-    <Use
-      resource={resource}
-      onSuccess={onSuccess}
-      retry
-      enhancedResource={enhancedResource as Promise<T>}
-    />
+    <Use onSuccess={onSuccess} resource={promise} />
   ) : (
-    (enhancedResource as ReactNode)
+    (promise as ReactNode)
   );
 
   const loadingContent =
@@ -73,4 +75,4 @@ const EnhancedSuspenseWhenRetry = <T,>(props: ESWhenRetryProps<T>) => {
   );
 };
 
-export default EnhancedSuspenseWhenRetry;
+export default ESClientComponent;

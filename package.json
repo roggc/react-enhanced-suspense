@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --passWithNoTests",
     "build": "tsc"
   },
   "keywords": [
@@ -21,13 +21,23 @@
     "react": "^19.0.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/jest": "^29.5.14",
     "@types/node": "^22.13.14",
     "@types/react": "^19.0.12",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "ts-jest": "^29.3.2",
+    "ts-node": "^10.9.2",
     "tsc": "^2.0.4",
     "typescript": "^5.8.2"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/roggc/react-enhanced-suspense.git"
+  },
+  "dependencies": {
+    "object-sizeof": "^2.6.5"
   }
 }
