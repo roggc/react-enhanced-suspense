@@ -10,7 +10,8 @@ import type { ESClientComponentProps } from "./types/types.js";
 const ESClientComponent = <T,>(props: ESClientComponentProps<T>) => {
   const {
     fallback,
-    children: resource,
+    children,
+    resource,
     resourceId,
     onSuccess,
     onError,
@@ -28,12 +29,12 @@ const ESClientComponent = <T,>(props: ESClientComponentProps<T>) => {
   } = props;
 
   const normalizedResource = useMemo(
-    () => (cache || retry ? resource : () => resource as Promise<T>),
-    [cache, retry, resource]
+    () => (cache || retry ? resource : () => children),
+    [cache, retry, resource, children]
   );
 
   const [promise, attempt] = usePromise(
-    normalizedResource,
+    normalizedResource as () => Promise<T>,
     retry,
     retryCount,
     retryDelay,
@@ -50,7 +51,7 @@ const ESClientComponent = <T,>(props: ESClientComponentProps<T>) => {
   const content = onSuccess ? (
     <Use onSuccess={onSuccess} resource={promise} />
   ) : (
-    (promise as ReactNode)
+    promise
   );
 
   const loadingContent =
@@ -61,7 +62,7 @@ const ESClientComponent = <T,>(props: ESClientComponentProps<T>) => {
       : fallback;
 
   const wrappedContent = (
-    <Suspense fallback={loadingContent}>{content}</Suspense>
+    <Suspense fallback={loadingContent}>{content as ReactNode}</Suspense>
   );
 
   const errorKey = useGetErrorKey<T>(props);

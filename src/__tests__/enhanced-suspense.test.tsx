@@ -1,13 +1,15 @@
 import { render, screen, act, fireEvent } from "@testing-library/react";
 import { StrictMode, useState } from "react";
-import Suspense from "../enhanced-suspense";
+import Suspense from "../index.js";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const resourceA = jest.fn(
-  () => new Promise((resolve) => setTimeout(() => resolve("data"), 1000))
+  () =>
+    new Promise<string>((resolve) => setTimeout(() => resolve("data"), 1000))
 );
 const resourceB = jest.fn(
-  () => new Promise((resolve) => setTimeout(() => resolve("data"), 1000))
+  () =>
+    new Promise<string>((resolve) => setTimeout(() => resolve("data"), 1000))
 );
 
 describe("EnhancedSuspense", () => {
@@ -22,9 +24,8 @@ describe("EnhancedSuspense", () => {
             cache
             cacheTTL={100}
             fallback="Loading..."
-          >
-            {resourceA}
-          </Suspense>
+            resource={resourceA}
+          />
         </StrictMode>
       );
     };
@@ -54,11 +55,12 @@ describe("EnhancedSuspense", () => {
             cache
             cacheTTL={100}
             fallback="Loading..."
-          >
-            {() =>
-              new Promise((resolve) => setTimeout(() => resolve("data"), 1000))
+            resource={() =>
+              new Promise<string>((resolve) =>
+                setTimeout(() => resolve("data"), 1000)
+              )
             }
-          </Suspense>
+          />
         </StrictMode>
       );
     };
@@ -87,9 +89,8 @@ describe("EnhancedSuspense", () => {
             cache
             cacheTTL={100}
             fallback="Loading..."
-          >
-            {resourceB}
-          </Suspense>
+            resource={resourceB}
+          />
         </>
       );
     };
@@ -119,11 +120,12 @@ describe("EnhancedSuspense", () => {
             cache
             cacheTTL={100}
             fallback="Loading..."
-          >
-            {() =>
-              new Promise((resolve) => setTimeout(() => resolve("data"), 100))
+            resource={() =>
+              new Promise<string>((resolve) =>
+                setTimeout(() => resolve("data"), 100)
+              )
             }
-          </Suspense>
+          />
         </>
       );
     };

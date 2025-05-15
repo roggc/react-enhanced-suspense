@@ -4,6 +4,12 @@ import cacheAPI, {
   deleteCache,
   CustomCacheStorage,
 } from "../cache.js";
+import sizeof from "object-sizeof";
+
+jest.mock("object-sizeof", () => ({
+  __esModule: true,
+  default: jest.fn().mockReturnValue(200), // Siempre devuelve 200 bytes
+}));
 
 // Mock Date.now for consistent TTL testing
 const mockDateNow = jest.spyOn(Date, "now");

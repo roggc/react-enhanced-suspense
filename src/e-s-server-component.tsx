@@ -4,12 +4,12 @@ import Use from "./use.js";
 import type { ESServerComponentProps } from "./types/types.js";
 
 const ESServerComponent = <T,>(props: ESServerComponentProps<T>) => {
-  const { fallback, children: resource, onSuccess } = props;
+  const { fallback, children, onSuccess } = props;
 
   const content = onSuccess ? (
-    <Use onSuccess={onSuccess} resource={resource as Promise<T>} />
+    <Use onSuccess={onSuccess} resource={children} />
   ) : (
-    resource
+    children
   );
 
   return <Suspense fallback={fallback}>{content as ReactNode}</Suspense>;

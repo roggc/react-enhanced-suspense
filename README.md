@@ -1,12 +1,13 @@
 # react-enhanced-suspense
 
-A React 19 component that enhances React's `Suspense` with optional features like promise resolved values handling (`onSuccess`), error handling (`onError`), retry functionality of failing promises (`retry`), caching (`cacheKey`), and timeout fallbacks (`timeouts`).
+A React 19 component that enhances React's `Suspense` with optional features like promise resolved values handling (`onSuccess`), error handling (`onError`), retry functionality of failing promises (`retry`), caching (`cache`), and timeout fallbacks (`timeouts`).
 
 ## Table of Contents
 
 - [Installation](#installation)
 - [Usage](#usage)
 - [Key Features](#key-features)
+- [React's `Suspense` (only `fallback` and/or `children` props)](#reacts-suspense-only-fallback-andor-children-props)
 - [Promise Resolution Handling With `onSuccess`](#promise-resolution-handling-with-onsuccess)
   - [React `Context` Example](#react-context-example)
 - [Error Handling With `onError` (\*Client Only)](#error-handling-with-onerror-client-only)
@@ -55,24 +56,43 @@ This component can be used as a substitute for React's `Suspense`.
 
 - **(\*)Error Handling**: Use `onError` to wrap React's `Suspense` in an `ErrorBoundary` for custom error rendering **(Client only)**.
 
-- **(\*)Retry Functionality**: Automatically retry failed promises with `retry`, configurable with `retryCount`, `retryDelay`, `backoff`, and `onRetryFallback` **(Client only)**.
+- **(\*)Retry Functionality**: Automatically retry failed promises with `retry`, configurable with `retryCount`, `retryDelay`, `retryBackoff`, and `onRetryFallback` **(Client only)**.
 
-- **(\*)Caching**: Store promise results in memory or `localStorage` with `cacheKey`, `cacheTTL`, `cacheVersion`, and `cachePersist` **(Client only)**.
+- **(\*)Caching**: Store promise results in memory or `localStorage` (or any custom storage) with `cache`, `resourceId`, `cacheTTL`, `cacheVersion`, and `cachePersist` **(Client only)**.
 
 - **Timeout Fallbacks**: Update the fallback UI dynamically with `timeouts` and `timeoutFallbacks` for long-running operations.
 
 - **React's `Suspense`**: This component is React's `Suspense` when only `fallback` or `children` props are used.
 
-- **TypeScript Support**: Fixes TypeScript errors when using React `Context` with `Suspense`, unlike React’s native `Suspense`.
+- **TypeScript Support**: Fixes TypeScript errors when using React Context with `Suspense`, unlike React’s native `Suspense`.
 
 **(\*)**: These props can only be used in the **Client**.
+
+## React's `Suspense` (only `fallback` and/or `children` props)
+
+```typescript
+import Suspense from "react-enhanced-suspense";
+
+export default function Component({ promise }: { promise: Promise<string> }) {
+  return (
+    <>
+      <div>Hey</div>
+      <div>
+        <Suspense fallback="Loading...">{promise}</Suspense>
+      </div>
+    </>
+  );
+}
+```
+
+Can be used either in the Client or Server.
 
 ## Promise Resolution Handling With `onSuccess`
 
 ```typescript
 import Suspense from "react-enhanced-suspense";
 
-export default function OnSuccess({ promise }: { promise: Promise<string[]> }) {
+export default function Component({ promise }: { promise: Promise<string[]> }) {
   return (
     <>
       <div>Hey</div>
@@ -89,9 +109,11 @@ export default function OnSuccess({ promise }: { promise: Promise<string[]> }) {
 }
 ```
 
+Can be used either in the Client or Server.
+
 ### React `Context` Example
 
-`EnhancedSuspense` also supports React `Context` as a `Usable` resource (`children` prop):
+`EnhancedSuspense` also supports React Context as a `Usable` resource (`children` prop):
 
 ```typescript
 "use client";

@@ -2,7 +2,7 @@
 export default {
   preset: "ts-jest",
   testEnvironment: "jsdom",
-  setupFilesAfterEnv: ["<rootDir>/src/jest-setup.ts"],
+  setupFilesAfterEnv: ["<rootDir>/jest-setup.ts"],
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1", // Reescribe .js a .ts/.tsx
     "\\.(css|less|scss|sass)$": "identity-obj-proxy",

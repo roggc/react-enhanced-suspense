@@ -15,7 +15,8 @@ export function useGetErrorKey<T>({
   retryCount,
   retryDelay,
   retryBackoff,
-  children: resource,
+  children,
+  resource,
   resourceId,
   onRetryFallback,
 }: ESClientComponentProps<T>) {

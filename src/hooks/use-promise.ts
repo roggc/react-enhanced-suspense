@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { setCache, getCache, deleteCache } from "../cache/cache.js";
 import type { BackoffStrategy } from "../types/types.js";
-import type { CacheEntry } from "../cache/cache.js";
 
 export function usePromise<T>(
   resource: () => Promise<T>,
@@ -23,18 +22,18 @@ export function usePromise<T>(
     value: false,
     key: 0,
   });
-  const cacheEntryRef = useRef<CacheEntry | null>(
+  const [cacheEntry, setCacheEntry] = useState(() =>
     cacheKey ? getCache(cacheKey) : null
   );
   const [attempt, setAttempt] = useState(0);
-  const [currentPromise, setCurrentPromise] = useState<
-    Promise<T | undefined> | undefined
-  >(undefined);
+  const [currentPromise, setCurrentPromise] = useState<Promise<T> | undefined>(
+    undefined
+  );
 
   useMemo(() => {
     if (cacheKey && previousCacheVersionRef.current !== cacheVersion) {
       deleteCache(cacheKey);
-      cacheEntryRef.current = null;
+      setCacheEntry(null);
     }
   }, [cacheVersion, cacheKey]);
 
@@ -48,13 +47,17 @@ export function usePromise<T>(
       if (cacheEntry?.value !== undefined) {
         deleteCache(cacheKey);
         setCache(cacheKey, cacheEntry.value, cacheTTL, cachePersist);
-        cacheEntryRef.current = getCache(cacheKey);
+        setCacheEntry(getCache(cacheKey));
       }
     }
     previousCachePersistRef.current = cachePersist;
     previousCacheTTLRef.current = cacheTTL;
     previousCacheVersionRef.current = cacheVersion;
   }, [cachePersist, cacheTTL, cacheVersion, cacheKey]);
+
+  useEffect(() => {
+    setCacheEntry(cacheKey ? getCache(cacheKey) : null);
+  }, [cacheKey]);
 
   const getPromiseWithRetry = async () => {
     let attempts = 0;
@@ -70,13 +73,13 @@ export function usePromise<T>(
         if (cacheKey) {
           setCache(cacheKey, result, cacheTTL, cachePersist);
           if (!isCancelled.value) {
-            cacheEntryRef.current = getCache(cacheKey);
+            setCacheEntry(getCache(cacheKey));
           }
         }
         return result;
       } catch (error) {
         if (isCancelled.value) {
-          return;
+          return undefined as T;
         }
         if (attempts < retryCount) {
           const delay =
@@ -102,22 +105,21 @@ export function usePromise<T>(
   };
 
   const getPromise = () => {
-    if (cacheKey && cacheEntryRef.current) {
+    if (cacheKey && cacheEntry) {
       if (
-        cacheEntryRef.current.isValid
-          ? cacheEntryRef.current.isValid()
-          : cacheEntryRef.current.expiry === undefined ||
-            Date.now() <= cacheEntryRef.current.expiry
+        cacheEntry.isValid
+          ? cacheEntry.isValid()
+          : cacheEntry.expiry === undefined || Date.now() <= cacheEntry.expiry
       ) {
         if (currentPromise) {
           return currentPromise;
         }
-        const promise = Promise.resolve(cacheEntryRef.current.value);
+        const promise = Promise.resolve(cacheEntry.value as T);
         setCurrentPromise(promise);
         return promise;
       } else {
         setCurrentPromise(undefined);
-        cacheEntryRef.current = null;
+        setCacheEntry(null);
       }
     }
 
@@ -131,7 +133,9 @@ export function usePromise<T>(
       ? resource().then(
           (result) => {
             setCache(cacheKey, result, cacheTTL, cachePersist);
-            cacheEntryRef.current = getCache(cacheKey);
+            if (!isCancelled.value) {
+              setCacheEntry(getCache(cacheKey));
+            }
             return result;
           },
           (error) => {
@@ -140,7 +144,7 @@ export function usePromise<T>(
         )
       : resource();
 
-    setCurrentPromise(promise);
+    promise && setCurrentPromise(promise);
     return promise;
   };
 
@@ -163,14 +167,13 @@ export function usePromise<T>(
     setCurrentPromise(undefined);
     setAttempt(0);
   }, [
-    cacheKey,
+    cache,
     cacheVersion,
     cacheTTL,
     cachePersist,
     retry,
     retryCount,
     retryDelay,
-    retryBackoff,
     resourceId,
   ]);
 
