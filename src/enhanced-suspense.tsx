@@ -169,42 +169,36 @@ const ErrorMessage = ({ children }: { children: ReactNode }) => (
  * ```
  */
 const EnhancedSuspense = <T,>(props: EnhancedSuspenseProps<T>) => {
-  const isServer = typeof window === "undefined";
+  const isServerEnvironment = typeof window === "undefined";
 
   const {
-    retry,
-    cache,
     onError,
     timeouts,
     onSuccess,
+    onRetryFallback,
+    retryBackoff,
+    resourceId,
+    children,
     productionPropsErrorFallback,
   } = props;
 
+  const isClientComponent =
+    timeouts || onError || resourceId || typeof children === "function";
+
+  const isFunctionAsProp =
+    onSuccess ||
+    typeof children === "function" ||
+    onRetryFallback ||
+    typeof retryBackoff === "function" ||
+    onError;
+
   const usingInvalidCombo =
-    isServer && (retry || cache || onError || (timeouts && onSuccess));
+    isServerEnvironment && isClientComponent && isFunctionAsProp;
 
   if (usingInvalidCombo) {
-    const errorLines = [];
-
-    if (retry)
-      errorLines.push("❌ 'retry' prop cannot be used in server environment.");
-    if (cache)
-      errorLines.push(
-        "❌ 'cacheKey' prop cannot be used in server environment."
-      );
-    if (onError)
-      errorLines.push(
-        "❌ 'onError' prop cannot be used in server environment."
-      );
-    if (timeouts && onSuccess)
-      errorLines.push(
-        "❌ 'timeouts' prop and 'onSuccess' prop cannot be used together in server environment."
-      );
-
     const errorMessage = [
-      "🚨⚠️ EnhancedSuspense - Invalid Props In Server Environment:",
-      ...errorLines,
-      "Solution: Add 'use client' directive or remove some props. ⚠️🚨",
+      "🚨⚠️ EnhancedSuspense - Invalid Use Of Props In Server Environment:",
+      "Add 'use client' Directive Or Remove Some Props. ⚠️🚨",
     ].join("\n");
 
     console.error(errorMessage);
@@ -216,8 +210,10 @@ const EnhancedSuspense = <T,>(props: EnhancedSuspenseProps<T>) => {
     );
   }
 
-  if (cache || retry || timeouts || onError)
+  if (isClientComponent) {
     return <ESClientComponent {...props} />;
+  }
+  // @ts-ignore
   return <ESServerComponent {...props} />;
 };
 

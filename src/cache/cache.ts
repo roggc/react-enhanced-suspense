@@ -3,7 +3,6 @@ import sizeof from "object-sizeof";
 export type CacheEntry = {
   value: any;
   expiry?: number | undefined;
-  isValid?: () => boolean;
 };
 /**
  * Interface for custom storage implementations to be used with the caching system.
@@ -325,9 +324,6 @@ const cache = {
         memoryExpirationMap.delete(cacheKey);
         return null;
       }
-      cacheEntry.isValid = function () {
-        return this.expiry === undefined || Date.now() <= this.expiry;
-      };
       const cacheEntrySize = estimateCacheEntrySize(cacheEntry, cacheKey);
       this.freeMemory(cacheKey, cacheEntrySize);
       memoryCache.set(cacheKey, cacheEntry);
@@ -338,6 +334,10 @@ const cache = {
     return null;
   },
 };
+
+export function isNotExpired(expiry?: number) {
+  return expiry === undefined || Date.now() <= expiry;
+}
 
 function isValidCacheKey(cacheKey: string) {
   return cacheKey && cacheKey.trim() !== "";
@@ -558,9 +558,6 @@ export function setCache(
     const cacheEntry: CacheEntry = {
       value,
       expiry: isValidTTL(ttl) ? Date.now() + ttl! : undefined,
-      isValid: function () {
-        return this.expiry === undefined || Date.now() <= this.expiry;
-      },
     };
     const cacheEntrySize = estimateCacheEntrySize(cacheEntry, cacheKey);
     cache.freeMemory(cacheKey, cacheEntrySize);
@@ -579,23 +576,6 @@ export function getCache(cacheKey: string) {
   return cache.customStorage
     ? cache.getFromCustomStorage(cacheKey)
     : cache.getFromMemoryStorage(cacheKey);
-}
-
-export function getCacheEntryExpiry(cacheKey: string) {
-  if (!isValidCacheKey(cacheKey)) return;
-  if (cache.customStorage) {
-    const cacheEntry = cache.customStorage.get(cacheKey);
-    return cacheEntry?.expiry;
-  }
-  const memoryCacheEntry = memoryCache.get(cacheKey);
-  if (memoryCacheEntry) {
-    return memoryCacheEntry.expiry;
-  }
-  const localStorageCacheEntry = operateOnLocalStorage(cacheKey, "getParsed");
-  if (isValidCacheEntry(localStorageCacheEntry)) {
-    return localStorageCacheEntry.expiry;
-  }
-  return undefined;
 }
 
 type Cache = Readonly<{

@@ -24,8 +24,9 @@ describe("EnhancedSuspense", () => {
             cache
             cacheTTL={100}
             fallback="Loading..."
-            resource={resourceA}
-          />
+          >
+            {resourceA}
+          </Suspense>
         </StrictMode>
       );
     };
@@ -55,12 +56,13 @@ describe("EnhancedSuspense", () => {
             cache
             cacheTTL={100}
             fallback="Loading..."
-            resource={() =>
+          >
+            {() =>
               new Promise<string>((resolve) =>
                 setTimeout(() => resolve("data"), 1000)
               )
             }
-          />
+          </Suspense>
         </StrictMode>
       );
     };
@@ -89,8 +91,9 @@ describe("EnhancedSuspense", () => {
             cache
             cacheTTL={100}
             fallback="Loading..."
-            resource={resourceB}
-          />
+          >
+            {resourceB}
+          </Suspense>
         </>
       );
     };
@@ -120,12 +123,13 @@ describe("EnhancedSuspense", () => {
             cache
             cacheTTL={100}
             fallback="Loading..."
-            resource={() =>
+          >
+            {() =>
               new Promise<string>((resolve) =>
                 setTimeout(() => resolve("data"), 100)
               )
             }
-          />
+          </Suspense>
         </>
       );
     };

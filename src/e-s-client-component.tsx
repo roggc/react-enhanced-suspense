@@ -11,7 +11,6 @@ const ESClientComponent = <T,>(props: ESClientComponentProps<T>) => {
   const {
     fallback,
     children,
-    resource,
     resourceId,
     onSuccess,
     onError,
@@ -28,13 +27,13 @@ const ESClientComponent = <T,>(props: ESClientComponentProps<T>) => {
     onRetryFallback,
   } = props;
 
-  const normalizedResource = useMemo(
-    () => (cache || retry ? resource : () => children),
-    [cache, retry, resource, children]
+  const resource = useMemo(
+    () => (typeof children === "function" ? children : () => children),
+    [children]
   );
 
   const [promise, attempt] = usePromise(
-    normalizedResource as () => Promise<T>,
+    resource as () => Promise<T>,
     retry,
     retryCount,
     retryDelay,

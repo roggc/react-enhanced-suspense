@@ -16,7 +16,6 @@ export function useGetErrorKey<T>({
   retryDelay,
   retryBackoff,
   children,
-  resource,
   resourceId,
   onRetryFallback,
 }: ESClientComponentProps<T>) {
@@ -34,7 +33,6 @@ export function useGetErrorKey<T>({
     retryDelay,
     // retryBackoff,
     resourceId,
-    // resource,
     // timeouts,
     // timeoutFallbacks,
     // fallback,

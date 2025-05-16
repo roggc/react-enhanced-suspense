@@ -315,7 +315,7 @@ describe("usePromise Hook", () => {
       // Verificar caché
       const cacheEntry = cache.getCache("key7");
       expect(cacheEntry?.value).toBe("Success");
-      expect(cacheEntry?.isValid?.()).toBe(true);
+      expect(cache.isNotExpired(cacheEntry?.expiry)).toBe(true);
 
       // Re-renderizar para usar caché
       rerender();
@@ -409,7 +409,7 @@ describe("usePromise Hook", () => {
       // Verificar nuevo caché
       const cacheEntry = cache.getCache("key9");
       expect(cacheEntry?.value).toBe("New Success");
-      expect(cacheEntry?.isValid?.()).toBe(true);
+      expect(cache.isNotExpired(cacheEntry?.expiry)).toBe(true);
     });
 
     test("respects cancellation with retry and cache on unmount", async () => {
@@ -688,12 +688,12 @@ describe("usePromise Hook", () => {
     });
 
     test("updates cache on cachePersist change", () => {
+      const resource = jest.fn(
+        () => new Promise((resolve) => setTimeout(() => resolve("data"), 100))
+      );
       const mockGetCache = jest.spyOn(cache, "getCache").mockReturnValue({
         value: "value1",
         expiry: 1000,
-        isValid: function () {
-          return true;
-        },
       });
       const mockSetCache = jest
         .spyOn(cache, "setCache")
@@ -724,12 +724,12 @@ describe("usePromise Hook", () => {
     });
 
     test("updates cache on cacheTTL change", () => {
+      const resource = jest.fn(
+        () => new Promise((resolve) => setTimeout(() => resolve("data"), 100))
+      );
       const mockGetCache = jest.spyOn(cache, "getCache").mockReturnValue({
         value: "value1",
         expiry: 1000,
-        isValid: function () {
-          return true;
-        },
       });
       const mockSetCache = jest
         .spyOn(cache, "setCache")

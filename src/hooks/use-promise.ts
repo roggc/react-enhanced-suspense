@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { setCache, getCache, deleteCache } from "../cache/cache.js";
+import {
+  setCache,
+  getCache,
+  deleteCache,
+  isNotExpired,
+} from "../cache/cache.js";
 import type { BackoffStrategy } from "../types/types.js";
 
 export function usePromise<T>(
@@ -106,11 +111,7 @@ export function usePromise<T>(
 
   const getPromise = () => {
     if (cacheKey && cacheEntry) {
-      if (
-        cacheEntry.isValid
-          ? cacheEntry.isValid()
-          : cacheEntry.expiry === undefined || Date.now() <= cacheEntry.expiry
-      ) {
+      if (isNotExpired(cacheEntry.expiry)) {
         if (currentPromise) {
           return currentPromise;
         }
