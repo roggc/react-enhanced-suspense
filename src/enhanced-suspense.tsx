@@ -179,11 +179,18 @@ const EnhancedSuspense = <T,>(props: EnhancedSuspenseProps<T>) => {
     retryBackoff,
     resourceId,
     children,
+    retry,
+    cache,
     productionPropsErrorFallback,
   } = props;
 
   const isClientComponent =
-    timeouts || onError || resourceId || typeof children === "function";
+    timeouts ||
+    onError ||
+    resourceId ||
+    retry ||
+    cache ||
+    typeof children === "function";
 
   const isFunctionAsProp =
     onSuccess ||
