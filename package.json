@@ -1,6 +1,6 @@
 {
   "name": "react-enhanced-suspense",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "A React 19 component that enhances React's Suspense with optional features like promise resolution handling, error handling, caching, and more.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
