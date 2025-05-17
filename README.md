@@ -13,13 +13,15 @@ A React 19 component that enhances React's `Suspense` with optional features lik
   - [React `Context` Example](#react-context-example)
 - [Error Handling With `onError` (\*Client Only)](#error-handling-with-onerror-client-only)
 - [Retry Functionality With `retry` (\*Client Only)](#retry-functionality-with-retry-client-only)
-- [Caching With `cacheKey` (\*Client Only)](#caching-with-cachekey-client-only)
+- [Caching With `cache` and `resourceId`](#caching-with-cache-and-resourceid)
 - [Timeout Fallbacks With `timeouts` And `timeoutFallbacks`](#timeout-fallbacks-with-timeouts-and-timeoutfallbacks)
-- [Invalid Props In The Server](#invalid-props-in-the-server)
+- [All Props Can Be Used Together In The Client](#all-props-can-be-used-together-in-the-client)
+- [Invalid Combination Of Props In The Server (`productionPropsErrorFallback`)](#invalid-combination-of-props-in-the-server-productionpropserrorfallback)
   - [Quick Reference Table](#quick-reference-table)
-  - [Examples](#examples)
-  - [`productionPropsErrorFallback`](#productionpropserrorfallback)
-- [Props](#props)
+- [`children`, The Resource Prop](#children-the-resource-prop)
+- [The `resourceId` Prop](#the-resourceid-prop)
+- [The `cacheAPI`](#the-cacheapi)
+- [Props Reference](#props-reference)
 - [Requirements](#requirements)
 - [License](#license)
 
@@ -294,7 +296,7 @@ export default function Component() {
 
 Can be used either in the Client or the Server.
 
-## All Props Can Be Used Together
+## All Props Can Be Used Together In The Client
 
 ```typescript
 "use client";
@@ -428,7 +430,7 @@ In the Client all props are allowed.
 
 ## The `resourceId` Prop
 
-As has been stated, `resourceId` turns the component into a Client Component, and it's necessary for `cache` to take effect (it's the cache key for storing the value into memory or localStorage or custom storage). `resourceId` it's a string. Apart from serving as a cache key when `cache` is used, it is also usefull when the resource, the `children` prop, changes dynamically. When `resourceId` changes, the evaluation of the resource is cancelled and a new evaluation starts. That is, a change in `resourceId` triggers a new evaluation of the resource, cancelling any pending evaluations.
+As has been stated, `resourceId` turns the component into a Client Component, and it's necessary for `cache` to take effect (it's the cache key for storing the value into memory or localStorage or custom storage). `resourceId` it's a string. Apart from serving as a cache key when `cache` is used, it is also useful when the resource, the `children` prop, changes dynamically. When `resourceId` changes, the evaluation of the resource is cancelled and a new evaluation starts. That is, a change in `resourceId` triggers a new evaluation of the resource, cancelling any pending evaluations.
 
 React's `Suspense` evaluates the resource in every render if the resource is not memoized and it is not a state variable, that is, if it changes in every render. `EnhancedSuspense`, on the other hand, in its Client version, doesn't need to memoize the resource. It is stable between rerenders. Therefore, if you want to reevalute a resource, you must supply a `resourceId` and change it.
 
@@ -604,7 +606,7 @@ const cacheAPI: Readonly<{
 }>;
 ```
 
-`clenaupCache()` removes from cache all expired entries. `clearCache()` clears all the cache. `setCustomStorage` sets a custom storage for the cache, where:
+`cleanupCache()` removes from cache all expired entries. `clearCache()` clears all the cache. `setCustomStorage` sets a custom storage for the cache, where:
 
 ```typescript
 type CustomCacheStorage = {
@@ -634,7 +636,7 @@ type CacheEntry = {
 
 These two types, `CustomCacheStorage` and `CacheEntry` are also exported by the package.
 
-## Props
+## Props Reference
 
 All props are optional. All props can be used together in the **Client**.
 
@@ -664,4 +666,8 @@ All props are optional. All props can be used together in the **Client**.
 
 ## License
 
-MIT
+MIT License
+
+Copyright (c) 2025 Roger Gomez Castells (@roggc)
+
+See the [LICENSE](./LICENSE.md) file for details.
