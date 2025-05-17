@@ -666,7 +666,7 @@ All props are optional. All props can be used together in the **Client**.
 
 ## License
 
-MIT License
+This project is licensed under the MIT License.
 
 Copyright (c) 2025 Roger Gomez Castells (@roggc)
 

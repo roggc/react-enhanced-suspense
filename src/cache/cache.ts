@@ -1,5 +1,3 @@
-import sizeof from "object-sizeof";
-
 export type CacheEntry = {
   value: any;
   expiry?: number | undefined;
@@ -399,12 +397,16 @@ function estimateCacheEntrySize(
   cacheEntry: CacheEntry,
   cacheKey: string
 ): number {
-  const bytes = sizeof(cacheEntry);
-  if (bytes < 0) {
+  try {
+    const bytes = new Blob([JSON.stringify(cacheEntry)]).size;
+    if (bytes < 0) {
+      return 0;
+    }
+    return bytes;
+  } catch (e) {
     console.warn(`Failed to estimate size for cache entry "${cacheKey}"`);
     return 0;
   }
-  return bytes;
 }
 
 /**

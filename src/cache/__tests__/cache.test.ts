@@ -4,12 +4,6 @@ import cacheAPI, {
   deleteCache,
   CustomCacheStorage,
 } from "../cache.js";
-import sizeof from "object-sizeof";
-
-jest.mock("object-sizeof", () => ({
-  __esModule: true,
-  default: jest.fn().mockReturnValue(200), // Siempre devuelve 200 bytes
-}));
 
 // Mock Date.now for consistent TTL testing
 const mockDateNow = jest.spyOn(Date, "now");
@@ -69,9 +63,9 @@ describe("Memory Cache", () => {
 
 describe("Cache Size Limits", () => {
   test("MAX_CACHE_BYTES evicts oldest entries", () => {
-    cacheAPI.setCacheSizeLimit(400); // Small limit
-    setCache("key1", "value1"); // ~200 bytes
-    setCache("key2", "value2"); // ~200 bytes
+    cacheAPI.setCacheSizeLimit(50); // Small limit
+    setCache("key1", "value1"); // ~20 bytes
+    setCache("key2", "value2"); // ~20 bytes
     setCache("key3", "value3"); // Exceeds limit
     expect(getCache("key1")).toBe(null); // Oldest evicted
     expect(getCache("key2")?.value).toBe("value2");
