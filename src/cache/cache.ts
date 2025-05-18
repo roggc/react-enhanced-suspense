@@ -397,12 +397,16 @@ function estimateCacheEntrySize(
   cacheEntry: CacheEntry,
   cacheKey: string
 ): number {
+  if (typeof TextEncoder === "undefined") {
+    console.warn(
+      `TextEncoder not available, skipping size estimation for "${cacheKey}"`
+    );
+    return 0;
+  }
+
   try {
-    const bytes = new Blob([JSON.stringify(cacheEntry)]).size;
-    if (bytes < 0) {
-      return 0;
-    }
-    return bytes;
+    const jsonString = JSON.stringify(cacheEntry);
+    return new TextEncoder().encode(jsonString).byteLength;
   } catch (e) {
     console.warn(`Failed to estimate size for cache entry "${cacheKey}"`);
     return 0;
