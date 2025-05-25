@@ -3,11 +3,17 @@
   "version": "4.0.2",
   "description": "A React 19 component that enhances React's Suspense with optional features like promise resolution handling, error handling, caching, and more.",
   "main": "dist/index.js",
+  "module": "dist/esm/index.js",
   "types": "dist/index.d.ts",
-  "type": "module",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/esm/index.js"
+    }
+  },
   "scripts": {
     "test": "jest --passWithNoTests",
-    "build": "tsc"
+    "build": "tsc && tsc -p tsconfig.esm.json"
   },
   "keywords": [
     "react",

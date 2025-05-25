@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "module": "esnext",
+    "module": "CommonJS",
     "jsx": "react-jsx",
     "declaration": true,
     "outDir": "./dist",
@@ -9,7 +9,6 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "noEmitOnError": true,
     "noEmit": false,
